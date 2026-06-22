@@ -169,25 +169,32 @@ function HealthCard({ water, steps, sleep, mood, onOpen }: { water: number; step
   return (
     <PlannerCard>
       <SectionHeader title="Health & Wellness" right={<CardLink onPress={onOpen} />} />
-      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12 }}>
+      <View style={{ flexDirection: "row", gap: 8 }}>
         <Metric label="Water" value={`${(water / 1000).toFixed(1)}L`} icon="droplet" />
         <Metric label="Steps" value={steps.toLocaleString()} icon="activity" />
         <Metric label="Sleep" value={`${sleep}h`} icon="moon" />
-        <Metric label="Mood" value={moods[Math.min(4, Math.max(0, mood - 1))]} icon="smile" />
+        <Metric label="Mood" value={moods[Math.min(4, Math.max(0, mood - 1))]} icon="smile" isEmoji />
       </View>
     </PlannerCard>
   );
 }
 
-function Metric({ label, value, icon }: { label: string; value: string; icon: any }) {
+function Metric({ label, value, icon, isEmoji }: { label: string; value: string; icon: any; isEmoji?: boolean }) {
   const accent = useAccentColor();
   return (
-    <View style={{ minWidth: 78 }}>
+    // Equal-width columns keep all four metrics on one row at any card width;
+    // a fixed lineHeight stops the taller emoji glyph from shoving the row.
+    <View style={{ flex: 1, minWidth: 0 }}>
       <View className="flex-row items-center" style={{ gap: 6 }}>
         <Feather name={icon} size={13} color={accent} />
         <LuxeLabel size={9} color={colors.inkMuted}>{label}</LuxeLabel>
       </View>
-      <Text style={{ color: colors.ink, fontSize: 18, fontWeight: "700", marginTop: 4 }}>{value}</Text>
+      <Text
+        numberOfLines={1}
+        style={{ color: colors.ink, fontSize: isEmoji ? 20 : 18, fontWeight: "700", marginTop: 4, lineHeight: 24 }}
+      >
+        {value}
+      </Text>
     </View>
   );
 }

@@ -45,10 +45,10 @@ app/                       # expo-router screens (file = route)
   priorities|todo|reminders|bills|shopping|notes|health|meals|love|schedule|settings.tsx
 src/
   components/
-    AppShell.tsx           # responsive frame: phone=IconRail, tablet=SidebarNavigation
-    nav/IconRail.tsx       # phone: thin 60px persistent left icon rail
+    AppShell.tsx           # responsive frame: phone=BottomNavigation, tablet=SidebarNavigation
+    nav/BottomNavigation.tsx   # phone: 4 tabs + a "+" that opens the module picker
+    nav/ModulePicker.tsx       # phone: full-screen arc wheel of all modules (opened by "+")
     nav/SidebarNavigation.tsx  # tablet: wider labelled sidebar
-    nav/BottomNavigation.tsx
     Screen.tsx, PlannerCard.tsx, SectionHeader.tsx, LuxeText.tsx, AppIcon.tsx, ... (shared UI)
     index.ts               # barrel export for components
   constants/modules.ts     # SINGLE SOURCE OF TRUTH for modules (routes, icons, accents, labels)
@@ -95,6 +95,7 @@ src/
 - **Internal storage identifiers are intentionally NOT renamed** to avoid wiping existing
   device data: local DB file is `aura.db` (`src/db/database.ts`) and the web storage key is
   `aura.webdb.v1` (`src/db/webdb.ts`). Leave these unless doing a deliberate data migration.
-- Don't reintroduce a `menu.tsx` screen — navigation is the persistent rail/sidebar.
+- Phone navigation is the bottom tab bar + "+" module picker wheel; tablet is the
+  labelled sidebar. There is no `menu.tsx` screen or left icon rail anymore.
 - Keep `MODULES` and the actual `app/*.tsx` files in sync (every module needs both).
 - This is `private: true`, not published to npm.

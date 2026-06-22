@@ -12,15 +12,11 @@ interface Tab {
   key: string;
   label: string;
   route: string;
-  iconFamily?: "feather" | "mci";
+  iconFamily: "feather" | "mci";
   iconName: string;
   accent: "gold" | "love";
 }
 
-/**
- * Phone tab bar. Four primary destinations plus a Menu tab that opens the full
- * module list, so every part of the app is reachable in at most two taps.
- */
 function tabFromModule(key: ModuleKey): Tab {
   const m = moduleByKey(key);
   return { key, label: m.label, route: m.route, iconFamily: m.iconFamily, iconName: m.iconName, accent: m.accent === "love" ? "love" : "gold" };
@@ -31,22 +27,23 @@ const TABS: Tab[] = [
   tabFromModule("todo"),
   tabFromModule("reminders"),
   tabFromModule("schedule"),
-  { key: "menu", label: "Menu", route: "/menu", iconFamily: "feather", iconName: "menu", accent: "gold" },
 ];
 
-export function BottomNavigation() {
+/**
+ * Phone tab bar: four primary destinations plus a trailing "+" that opens the
+ * module picker wheel (every other module is reachable from there).
+ */
+export function BottomNavigation({ onAdd }: { onAdd: () => void }) {
   const router = useRouter();
   const pathname = usePathname();
   const insets = useSafeAreaInsets();
   const accentColor = useAccent() === "love" ? colors.love : colors.gold;
 
-  // Routes that live "inside" the Menu tab so it stays highlighted on them.
-  const menuRoutes = ["/menu", "/priorities", "/bills", "/shopping", "/notes", "/health", "/meals", "/love", "/settings"];
-
   return (
     <View
       style={{
         flexDirection: "row",
+        alignItems: "center",
         backgroundColor: colors.bgDeep,
         borderTopWidth: 1,
         borderTopColor: colors.border,
@@ -56,8 +53,7 @@ export function BottomNavigation() {
       }}
     >
       {TABS.map((tab) => {
-        const active = tab.key === "menu" ? menuRoutes.includes(pathname) : pathname === tab.route;
-        const tint = accentColor;
+        const active = pathname === tab.route;
         return (
           <Pressable
             key={tab.key}
@@ -65,11 +61,7 @@ export function BottomNavigation() {
             className="flex-1 items-center"
             style={{ paddingVertical: 4 }}
           >
-            {tab.iconFamily ? (
-              <AppIcon family={tab.iconFamily} name={tab.iconName} size={22} color={active ? tint : colors.inkFaint} />
-            ) : (
-              <Feather name={tab.iconName as never} size={22} color={active ? tint : colors.inkFaint} />
-            )}
+            <AppIcon family={tab.iconFamily} name={tab.iconName} size={22} color={active ? accentColor : colors.inkFaint} />
             <Text
               style={{
                 fontSize: 9, marginTop: 4, letterSpacing: 1,
@@ -82,6 +74,21 @@ export function BottomNavigation() {
           </Pressable>
         );
       })}
+
+      {/* Trailing add button — opens the module picker wheel */}
+      <View style={{ width: 64, alignItems: "center" }}>
+        <Pressable
+          onPress={onAdd}
+          hitSlop={8}
+          style={{
+            width: 46, height: 46, borderRadius: 23,
+            alignItems: "center", justifyContent: "center",
+            backgroundColor: accentColor,
+          }}
+        >
+          <Feather name="plus" size={24} color={colors.bgDeep} />
+        </Pressable>
+      </View>
     </View>
   );
 }

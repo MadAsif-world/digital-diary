@@ -33,3 +33,6 @@ yarn-error.*
 # typescript
 *.tsbuildinfo
 .gstack/
+
+# Leftover duplicate Expo clone (locked empty dir, ignore)
+digital-diary/

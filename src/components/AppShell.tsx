@@ -1,19 +1,21 @@
-import React from "react";
+import React, { useState } from "react";
 import { View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Slot } from "expo-router";
 import { SidebarNavigation } from "./nav/SidebarNavigation";
-import { IconRail } from "./nav/IconRail";
+import { BottomNavigation } from "./nav/BottomNavigation";
+import { ModulePicker } from "./nav/ModulePicker";
 import { useBreakpoint } from "../lib/responsive";
 import { colors } from "../theme";
 
 /**
  * Responsive frame around every screen.
- *   phone  → thin left icon rail + content (the reference's signature layout)
+ *   phone  → full-width content + bottom tab bar (standard mobile nav)
  *   tablet → wider labelled sidebar + content
  */
 export function AppShell() {
   const { isTablet } = useBreakpoint();
+  const [pickerOpen, setPickerOpen] = useState(false);
 
   if (isTablet) {
     return (
@@ -29,13 +31,12 @@ export function AppShell() {
   }
 
   return (
-    <View style={{ flex: 1, flexDirection: "row", backgroundColor: colors.bg }}>
-      <SafeAreaView edges={["top", "left", "bottom"]} style={{ backgroundColor: colors.bgDeep }}>
-        <IconRail />
-      </SafeAreaView>
-      <SafeAreaView edges={["top", "right"]} style={{ flex: 1, backgroundColor: colors.bg }}>
+    <View style={{ flex: 1, backgroundColor: colors.bg }}>
+      <SafeAreaView edges={["top", "left", "right"]} style={{ flex: 1, backgroundColor: colors.bg }}>
         <Slot />
       </SafeAreaView>
+      <BottomNavigation onAdd={() => setPickerOpen(true)} />
+      <ModulePicker visible={pickerOpen} onClose={() => setPickerOpen(false)} />
     </View>
   );
 }
