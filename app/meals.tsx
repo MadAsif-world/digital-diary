@@ -6,6 +6,7 @@ import { LuxeLabel } from "../src/components/LuxeText";
 import { useDayScreen } from "../src/hooks/useDayScreen";
 import { useDayStore } from "../src/store/day";
 import { useAppStore } from "../src/store/app";
+import { useAccentColor } from "../src/hooks/useAccent";
 import { addDays, parseDayKey, isToday, dayKey as todayKey } from "../src/lib/date";
 import { colors } from "../src/theme";
 
@@ -23,6 +24,7 @@ export default function MealsScreen() {
   const meal = useDayStore((s) => s.meal);
   const update = useDayStore((s) => s.updateMeal);
   const setDay = useAppStore((s) => s.setDay);
+  const accent = useAccentColor();
 
   // Build the Sun–Sat week containing the selected day.
   const selected = parseDayKey(dayKey);
@@ -51,8 +53,8 @@ export default function MealsScreen() {
                   className="items-center justify-center"
                   style={{
                     width: 34, height: 34, borderRadius: 17, marginTop: 6,
-                    backgroundColor: active ? colors.gold : "transparent",
-                    borderWidth: today && !active ? 1 : 0, borderColor: colors.gold,
+                    backgroundColor: active ? accent : "transparent",
+                    borderWidth: today && !active ? 1 : 0, borderColor: accent,
                   }}
                 >
                   <Text style={{ color: active ? colors.bg : colors.ink, fontSize: 14, fontWeight: active ? "700" : "400" }}>
@@ -68,7 +70,7 @@ export default function MealsScreen() {
       {SLOTS.map((slot) => (
         <PlannerCard key={slot.key} style={{ marginBottom: 12 }}>
           <View className="mb-3 flex-row items-center" style={{ gap: 10 }}>
-            <Feather name={slot.icon} size={16} color={colors.gold} />
+            <Feather name={slot.icon} size={16} color={accent} />
             <LuxeLabel size={12} color={colors.ink}>{slot.label}</LuxeLabel>
           </View>
           <EditableTextBlock

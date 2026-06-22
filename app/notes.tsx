@@ -5,6 +5,7 @@ import { Screen, PlannerCard, EmptyState, FloatingAddButton } from "../src/compo
 import { LuxeLabel } from "../src/components/LuxeText";
 import { useNoteStore, filterNotes } from "../src/store/notes";
 import { useBreakpoint } from "../src/lib/responsive";
+import { useAccentColor } from "../src/hooks/useAccent";
 import { colors } from "../src/theme";
 import type { Note } from "../src/db/types";
 
@@ -78,6 +79,7 @@ export default function NotesScreen() {
 }
 
 function NoteCard({ note, onOpen, onPin }: { note: Note; onOpen: () => void; onPin: () => void }) {
+  const accentC = useAccentColor();
   return (
     <PlannerCard onPress={onOpen} accent={note.pinned ? "gold" : "none"}>
       <View className="flex-row items-start justify-between">
@@ -85,7 +87,7 @@ function NoteCard({ note, onOpen, onPin }: { note: Note; onOpen: () => void; onP
           {note.title || "Untitled"}
         </Text>
         <Pressable onPress={onPin} hitSlop={8}>
-          <Feather name="bookmark" size={16} color={note.pinned ? colors.gold : colors.inkFaint} />
+          <Feather name="bookmark" size={16} color={note.pinned ? accentC : colors.inkFaint} />
         </Pressable>
       </View>
       {note.body ? (

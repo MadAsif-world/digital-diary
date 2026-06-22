@@ -5,6 +5,7 @@ import { Screen, PlannerCard, DateSwitcher, EditableTextBlock, EmptyState, Float
 import { LuxeLabel } from "../src/components/LuxeText";
 import { useDayScreen } from "../src/hooks/useDayScreen";
 import { useDayStore } from "../src/store/day";
+import { useAccent, useAccentColor } from "../src/hooks/useAccent";
 import { colors } from "../src/theme";
 import type { Priority } from "../src/db/types";
 
@@ -55,16 +56,18 @@ function PriorityItem({
   index: number; item: Priority;
   onToggle: () => void; onText: (t: string) => void; onNote: (t: string) => void; onDelete: () => void;
 }) {
+  const accent = useAccent();
+  const accentC = useAccentColor();
   return (
-    <PlannerCard accent={item.done ? "none" : index < 3 ? "gold" : "none"}>
+    <PlannerCard accent={item.done ? "none" : index < 3 ? accent : "none"}>
       <View className="flex-row items-center" style={{ gap: 12 }}>
         <Pressable onPress={onToggle} hitSlop={8}>
           <View
             className="items-center justify-center"
             style={{
               width: 28, height: 28, borderRadius: 8,
-              borderWidth: 1.5, borderColor: item.done ? colors.gold : colors.border,
-              backgroundColor: item.done ? colors.gold : "transparent",
+              borderWidth: 1.5, borderColor: item.done ? accentC : colors.border,
+              backgroundColor: item.done ? accentC : "transparent",
             }}
           >
             {item.done ? <Feather name="check" size={17} color={colors.bg} /> : (

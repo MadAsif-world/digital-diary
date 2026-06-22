@@ -13,12 +13,14 @@ import { useNoteStore } from "../src/store/notes";
 import { useEventStore } from "../src/store/events";
 import { resetDatabase } from "../src/db/database";
 import { ensureNotificationPermissions } from "../src/notifications";
+import { useAccentColor } from "../src/hooks/useAccent";
 import { colors } from "../src/theme";
 
 export default function SettingsScreen() {
   const settings = useAppStore((s) => s.settings);
   const updateSettings = useAppStore((s) => s.updateSettings);
   const init = useAppStore((s) => s.init);
+  const accent = useAccentColor();
   const [name, setName] = useState(settings?.displayName ?? "");
 
   const doReset = async () => {
@@ -55,7 +57,7 @@ export default function SettingsScreen() {
   };
 
   return (
-    <Screen title="Settings" subtitle="Make Aura yours">
+    <Screen title="Settings" subtitle="Make it yours">
       <PlannerCard style={{ marginBottom: 14 }}>
         <SectionHeader title="Profile" />
         <LuxeLabel size={10} color={colors.inkMuted} style={{ marginBottom: 6 }}>Display name</LuxeLabel>
@@ -103,7 +105,7 @@ export default function SettingsScreen() {
                 if (v) await ensureNotificationPermissions();
                 updateSettings({ notificationsEnabled: v ? 1 : 0 });
               }}
-              trackColor={{ true: colors.gold, false: colors.border }}
+              trackColor={{ true: accent, false: colors.border }}
               thumbColor={colors.ink}
             />
           }
@@ -127,7 +129,7 @@ export default function SettingsScreen() {
       </PlannerCard>
 
       <Text style={{ color: colors.inkFaint, fontSize: 12, textAlign: "center", marginTop: 20 }}>
-        Aura Planner · v0.1.0
+        Digital Diary · v0.1.0
       </Text>
     </Screen>
   );

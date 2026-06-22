@@ -5,6 +5,7 @@ import { Screen, PlannerCard, CheckboxRow, EmptyState } from "../src/components"
 import { LuxeLabel } from "../src/components/LuxeText";
 import { useShoppingStore } from "../src/store/shopping";
 import { formatCurrency } from "../src/lib/date";
+import { useAccentColor } from "../src/hooks/useAccent";
 import { colors } from "../src/theme";
 import type { ShoppingItem } from "../src/db/types";
 
@@ -24,6 +25,7 @@ export default function ShoppingScreen() {
   const [name, setName] = useState("");
   const [newList, setNewList] = useState("");
   const [adding, setAdding] = useState(false);
+  const accent = useAccentColor();
 
   useEffect(() => { void load(); }, [load]);
 
@@ -52,8 +54,8 @@ export default function ShoppingScreen() {
               onLongPress={() => removeList(l.id)}
               style={{
                 paddingHorizontal: 16, paddingVertical: 9, borderRadius: 999,
-                backgroundColor: active ? colors.gold : colors.card,
-                borderWidth: 1, borderColor: active ? colors.gold : colors.border,
+                backgroundColor: active ? accent : colors.card,
+                borderWidth: 1, borderColor: active ? accent : colors.border,
               }}
             >
               <LuxeLabel size={10} color={active ? colors.bg : colors.inkMuted}>{l.name}</LuxeLabel>
@@ -69,12 +71,12 @@ export default function ShoppingScreen() {
               placeholder="List name"
               placeholderTextColor={colors.inkFaint}
               onSubmitEditing={async () => { if (newList.trim()) { await addList(newList.trim()); setNewList(""); setAdding(false); } }}
-              style={{ color: colors.ink, backgroundColor: colors.card, borderRadius: 999, borderWidth: 1, borderColor: colors.gold, paddingHorizontal: 14, paddingVertical: 8, minWidth: 120 }}
+              style={{ color: colors.ink, backgroundColor: colors.card, borderRadius: 999, borderWidth: 1, borderColor: accent, paddingHorizontal: 14, paddingVertical: 8, minWidth: 120 }}
             />
           </View>
         ) : (
           <Pressable onPress={() => setAdding(true)} style={{ paddingHorizontal: 14, paddingVertical: 9, borderRadius: 999, borderWidth: 1, borderColor: colors.border }}>
-            <Feather name="plus" size={16} color={colors.gold} />
+            <Feather name="plus" size={16} color={accent} />
           </Pressable>
         )}
       </ScrollView>
@@ -85,7 +87,7 @@ export default function ShoppingScreen() {
         <>
           <PlannerCard elevated style={{ marginBottom: 16 }}>
             <View className="flex-row items-center" style={{ gap: 10 }}>
-              <Feather name="plus-circle" size={22} color={colors.gold} />
+              <Feather name="plus-circle" size={22} color={accent} />
               <TextInput
                 value={name}
                 onChangeText={setName}
@@ -101,7 +103,7 @@ export default function ShoppingScreen() {
           {estTotal > 0 && (
             <View className="flex-row items-center justify-between" style={{ marginBottom: 12, paddingHorizontal: 4 }}>
               <LuxeLabel size={10} color={colors.inkMuted}>Estimated total</LuxeLabel>
-              <Text style={{ color: colors.gold, fontWeight: "700", fontSize: 15 }}>{formatCurrency(estTotal)}</Text>
+              <Text style={{ color: accent, fontWeight: "700", fontSize: 15 }}>{formatCurrency(estTotal)}</Text>
             </View>
           )}
 
@@ -171,11 +173,12 @@ function ShoppingRow({ item, last, onToggle, onUpdate, onDelete }: {
 }
 
 function Stepper({ label, value, onChange }: { label: string; value: number; onChange: (v: number) => void }) {
+  const accent = useAccentColor();
   return (
     <View className="flex-row items-center" style={{ gap: 8, backgroundColor: colors.bgDeep, borderRadius: 10, borderWidth: 1, borderColor: colors.border, paddingHorizontal: 8, paddingVertical: 4 }}>
       <Pressable onPress={() => onChange(value - 1)} hitSlop={6}><Feather name="minus" size={14} color={colors.inkMuted} /></Pressable>
       <Text style={{ color: colors.ink, fontSize: 13, minWidth: 16, textAlign: "center" }}>{value}</Text>
-      <Pressable onPress={() => onChange(value + 1)} hitSlop={6}><Feather name="plus" size={14} color={colors.gold} /></Pressable>
+      <Pressable onPress={() => onChange(value + 1)} hitSlop={6}><Feather name="plus" size={14} color={accent} /></Pressable>
     </View>
   );
 }

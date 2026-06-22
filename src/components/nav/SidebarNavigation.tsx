@@ -27,7 +27,7 @@ export function SidebarNavigation() {
       }}
     >
       <View className="mb-6 px-2">
-        <LuxeLabel size={16} color={accentColor}>Aura</LuxeLabel>
+        <LuxeLabel size={16} color={accentColor}>Digital Diary</LuxeLabel>
         <Text style={{ color: colors.inkMuted, fontSize: 12, marginTop: 2 }}>Personal Planner</Text>
       </View>
 

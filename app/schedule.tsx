@@ -5,6 +5,7 @@ import { Screen, PlannerCard, SectionHeader, EmptyState, IconButton } from "../s
 import { LuxeLabel } from "../src/components/LuxeText";
 import { useEventStore } from "../src/store/events";
 import { useAppStore } from "../src/store/app";
+import { useAccentColor } from "../src/hooks/useAccent";
 import { monthMatrix, parseDayKey, dayKey as todayKey, formatLongDate, formatMonthYear } from "../src/lib/date";
 import { colors } from "../src/theme";
 import type { EventKind } from "../src/db/types";
@@ -22,6 +23,7 @@ export default function ScheduleScreen() {
   const add = useEventStore((s) => s.add);
   const remove = useEventStore((s) => s.remove);
   const setDay = useAppStore((s) => s.setDay);
+  const accent = useAccentColor();
 
   const today = parseDayKey(todayKey());
   const [year, setYear] = useState(today.getFullYear());
@@ -81,15 +83,15 @@ export default function ScheduleScreen() {
                     className="items-center justify-center"
                     style={{
                       width: 36, height: 36, borderRadius: 12,
-                      backgroundColor: isSel ? colors.gold : "transparent",
-                      borderWidth: isToday && !isSel ? 1 : 0, borderColor: colors.gold,
+                      backgroundColor: isSel ? accent : "transparent",
+                      borderWidth: isToday && !isSel ? 1 : 0, borderColor: accent,
                     }}
                   >
                     <Text style={{ color: isSel ? colors.bg : colors.ink, fontSize: 14, fontWeight: isSel ? "700" : "400" }}>
                       {d.getDate()}
                     </Text>
                   </View>
-                  {has ? <View style={{ width: 5, height: 5, borderRadius: 3, backgroundColor: isSel ? colors.gold : colors.gold, marginTop: 2 }} /> : <View style={{ height: 7 }} />}
+                  {has ? <View style={{ width: 5, height: 5, borderRadius: 3, backgroundColor: accent, marginTop: 2 }} /> : <View style={{ height: 7 }} />}
                 </Pressable>
               );
             })}
@@ -102,8 +104,8 @@ export default function ScheduleScreen() {
           title={formatLongDate(selected)}
           right={
             <Pressable onPress={() => setDay(selected)} hitSlop={8} className="flex-row items-center" style={{ gap: 4 }}>
-              <LuxeLabel size={9} color={colors.gold}>Open day</LuxeLabel>
-              <Feather name="arrow-up-right" size={14} color={colors.gold} />
+              <LuxeLabel size={9} color={accent}>Open day</LuxeLabel>
+              <Feather name="arrow-up-right" size={14} color={accent} />
             </Pressable>
           }
         />
@@ -119,7 +121,7 @@ export default function ScheduleScreen() {
             onSubmitEditing={submit}
             returnKeyType="done"
           />
-          <Pressable onPress={submit} hitSlop={8}><Feather name="plus-circle" size={26} color={colors.gold} /></Pressable>
+          <Pressable onPress={submit} hitSlop={8}><Feather name="plus-circle" size={26} color={accent} /></Pressable>
         </View>
         <View className="flex-row" style={{ gap: 8, marginBottom: 14 }}>
           {KINDS.map((kd) => (

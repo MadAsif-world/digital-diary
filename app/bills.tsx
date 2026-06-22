@@ -6,6 +6,7 @@ import { LuxeLabel } from "../src/components/LuxeText";
 import { DateField } from "../src/components/DateField";
 import { useBillStore, billTotals } from "../src/store/bills";
 import { dayKey, parseDayKey, formatCurrency } from "../src/lib/date";
+import { useAccentColor } from "../src/hooks/useAccent";
 import { colors } from "../src/theme";
 import type { Bill } from "../src/db/types";
 
@@ -56,6 +57,7 @@ function ComposeBill({ onCancel, onSubmit }: {
   onCancel: () => void;
   onSubmit: (v: { name: string; amount: number; dueDate: string; category: string; notes: string }) => void;
 }) {
+  const accent = useAccentColor();
   const [name, setName] = useState("");
   const [amount, setAmount] = useState("");
   const [due, setDue] = useState(dayKey());
@@ -69,7 +71,7 @@ function ComposeBill({ onCancel, onSubmit }: {
   return (
     <PlannerCard elevated accent="gold" style={{ marginBottom: 16 }}>
       <View className="mb-3 flex-row items-center justify-between">
-        <LuxeLabel size={12} color={colors.gold}>New Bill</LuxeLabel>
+        <LuxeLabel size={12} color={accent}>New Bill</LuxeLabel>
         <Pressable onPress={onCancel} hitSlop={8}><Feather name="x" size={20} color={colors.inkMuted} /></Pressable>
       </View>
       <Field placeholder="Bill name" value={name} onChangeText={setName} />
@@ -84,7 +86,7 @@ function ComposeBill({ onCancel, onSubmit }: {
       <View style={{ marginBottom: 14 }}>
         <DateField value={due} onChange={setDue} />
       </View>
-      <Pressable onPress={submit} style={{ backgroundColor: colors.gold, borderRadius: 14, paddingVertical: 14, alignItems: "center" }}>
+      <Pressable onPress={submit} style={{ backgroundColor: accent, borderRadius: 14, paddingVertical: 14, alignItems: "center" }}>
         <LuxeLabel size={12} color={colors.bg}>Add Bill</LuxeLabel>
       </Pressable>
     </PlannerCard>
@@ -109,6 +111,7 @@ function BillItem({ bill, onTogglePaid, onUpdate, onDelete }: {
   bill: Bill; onTogglePaid: () => void; onUpdate: (p: Partial<Bill>) => void; onDelete: () => void;
 }) {
   const [expanded, setExpanded] = useState(false);
+  const accent = useAccentColor();
   const overdue = !bill.paid && bill.dueDate < dayKey();
   const due = parseDayKey(bill.dueDate);
   return (
@@ -132,7 +135,7 @@ function BillItem({ bill, onTogglePaid, onUpdate, onDelete }: {
             {bill.category} · due {due.getMonth() + 1}/{due.getDate()}{overdue ? " · overdue" : ""}
           </Text>
         </Pressable>
-        <Text style={{ color: colors.gold, fontSize: 16, fontWeight: "700" }}>{formatCurrency(bill.amount)}</Text>
+        <Text style={{ color: accent, fontSize: 16, fontWeight: "700" }}>{formatCurrency(bill.amount)}</Text>
         <Pressable onPress={onDelete} hitSlop={6} style={{ marginLeft: 8 }}>
           <Feather name="trash-2" size={17} color={colors.inkFaint} />
         </Pressable>

@@ -1,10 +1,10 @@
 {
   "expo": {
-    "name": "Aura Planner",
-    "slug": "aura-planner",
+    "name": "Digital Diary",
+    "slug": "digital-diary",
     "version": "0.1.0",
     "orientation": "default",
-    "scheme": "auraplanner",
+    "scheme": "digitaldiary",
     "userInterfaceStyle": "dark",
     "newArchEnabled": true,
     "backgroundColor": "#111111",
@@ -13,7 +13,7 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.aura.planner",
+      "bundleIdentifier": "com.digitaldiary.app",
       "infoPlist": {
         "UIBackgroundModes": [
           "remote-notification"
@@ -21,7 +21,7 @@
       }
     },
     "android": {
-      "package": "com.aura.planner"
+      "package": "com.digitaldiary.app"
     },
     "web": {
       "bundler": "metro",

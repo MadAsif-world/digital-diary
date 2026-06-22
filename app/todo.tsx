@@ -6,6 +6,7 @@ import { LuxeLabel } from "../src/components/LuxeText";
 import { DateField } from "../src/components/DateField";
 import { useTaskStore } from "../src/store/tasks";
 import { dayKey } from "../src/lib/date";
+import { useAccentColor } from "../src/hooks/useAccent";
 import { colors } from "../src/theme";
 import type { Task, PriorityLevel } from "../src/db/types";
 
@@ -26,6 +27,7 @@ export default function TodoScreen() {
   const [filter, setFilter] = useState<Filter>("today");
   const [title, setTitle] = useState("");
   const [level, setLevel] = useState<PriorityLevel>("medium");
+  const accent = useAccentColor();
 
   useEffect(() => { void load(); }, [load]);
 
@@ -63,7 +65,7 @@ export default function TodoScreen() {
             returnKeyType="done"
           />
           <Pressable onPress={submit} hitSlop={8}>
-            <Feather name="plus-circle" size={26} color={colors.gold} />
+            <Feather name="plus-circle" size={26} color={accent} />
           </Pressable>
         </View>
       </PlannerCard>
@@ -76,8 +78,8 @@ export default function TodoScreen() {
             onPress={() => setFilter(f)}
             style={{
               paddingHorizontal: 16, paddingVertical: 8, borderRadius: 999,
-              backgroundColor: filter === f ? colors.gold : colors.card,
-              borderWidth: 1, borderColor: filter === f ? colors.gold : colors.border,
+              backgroundColor: filter === f ? accent : colors.card,
+              borderWidth: 1, borderColor: filter === f ? accent : colors.border,
             }}
           >
             <LuxeLabel size={10} color={filter === f ? colors.bg : colors.inkMuted}>

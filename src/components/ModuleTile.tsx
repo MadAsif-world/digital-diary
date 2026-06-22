@@ -5,12 +5,14 @@ import { PlannerCard } from "./PlannerCard";
 import { AppIcon } from "./AppIcon";
 import { LuxeLabel } from "./LuxeText";
 import { colors } from "../theme";
+import { useAccentColor } from "../hooks/useAccent";
 import type { ModuleDef } from "../constants/modules";
 
 /** A tappable tile for a planner module — used in the dashboard quick links. */
 export function ModuleTile({ module }: { module: ModuleDef }) {
   const router = useRouter();
-  const tint = module.accent === "love" ? colors.love : colors.gold;
+  const accent = useAccentColor();
+  const tint = module.accent === "love" ? colors.love : accent;
   return (
     <PlannerCard
       onPress={() => router.push(module.route as never)}

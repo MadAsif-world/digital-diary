@@ -1,6 +1,7 @@
 import React from "react";
 import { View, ViewProps, Pressable } from "react-native";
 import { colors, shadow } from "../theme";
+import { useAccentColor } from "../hooks/useAccent";
 
 interface Props extends ViewProps {
   elevated?: boolean;
@@ -13,8 +14,10 @@ interface Props extends ViewProps {
 export function PlannerCard({
   children, elevated, accent = "none", onPress, padded = true, style, ...rest
 }: Props) {
+  // "gold" follows the user's chosen primary accent; "love" stays red (semantic).
+  const globalAccent = useAccentColor();
   const accentBorder =
-    accent === "gold" ? colors.gold : accent === "love" ? colors.love : colors.border;
+    accent === "gold" ? globalAccent : accent === "love" ? colors.love : colors.border;
 
   const content = (
     <View

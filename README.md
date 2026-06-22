@@ -1,4 +1,4 @@
-# Aura Planner
+# Digital Diary
 
 A premium, dark-mode **digital planner** for phone and tablet — built mobile-first,
 offline-first, and ready for cloud sync later. Inspired by a luxury digital mobile

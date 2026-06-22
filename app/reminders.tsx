@@ -7,6 +7,7 @@ import { LuxeLabel } from "../src/components/LuxeText";
 import { ReminderTimePicker } from "../src/components/ReminderTimePicker";
 import { useReminderStore } from "../src/store/reminders";
 import { formatTime } from "../src/lib/date";
+import { useAccentColor } from "../src/hooks/useAccent";
 import { colors } from "../src/theme";
 import type { Reminder, RepeatRule } from "../src/db/types";
 
@@ -60,6 +61,7 @@ export default function RemindersScreen() {
 }
 
 function ComposeReminder({ onCancel, onSubmit }: { onCancel: () => void; onSubmit: (v: FormValues) => void }) {
+  const accent = useAccentColor();
   const initial = new Date(Date.now() + 60 * 60 * 1000);
   initial.setSeconds(0, 0);
   const { control, handleSubmit, formState: { errors } } = useForm<FormValues>({
@@ -69,7 +71,7 @@ function ComposeReminder({ onCancel, onSubmit }: { onCancel: () => void; onSubmi
   return (
     <PlannerCard elevated accent="gold" style={{ marginBottom: 16 }}>
       <View className="mb-3 flex-row items-center justify-between">
-        <LuxeLabel size={12} color={colors.gold}>New Reminder</LuxeLabel>
+        <LuxeLabel size={12} color={accent}>New Reminder</LuxeLabel>
         <Pressable onPress={onCancel} hitSlop={8}><Feather name="x" size={20} color={colors.inkMuted} /></Pressable>
       </View>
 
@@ -107,8 +109,8 @@ function ComposeReminder({ onCancel, onSubmit }: { onCancel: () => void; onSubmi
               onPress={() => onChange(rp)}
               style={{
                 paddingHorizontal: 14, paddingVertical: 7, borderRadius: 999,
-                backgroundColor: value === rp ? colors.gold : "transparent",
-                borderWidth: 1, borderColor: value === rp ? colors.gold : colors.border,
+                backgroundColor: value === rp ? accent : "transparent",
+                borderWidth: 1, borderColor: value === rp ? accent : colors.border,
               }}
             >
               <Text style={{ color: value === rp ? colors.bg : colors.inkMuted, fontSize: 11, textTransform: "capitalize" }}>{rp}</Text>
@@ -119,7 +121,7 @@ function ComposeReminder({ onCancel, onSubmit }: { onCancel: () => void; onSubmi
 
       <Pressable
         onPress={handleSubmit(onSubmit)}
-        style={{ backgroundColor: colors.gold, borderRadius: 14, paddingVertical: 14, alignItems: "center" }}
+        style={{ backgroundColor: accent, borderRadius: 14, paddingVertical: 14, alignItems: "center" }}
       >
         <LuxeLabel size={12} color={colors.bg}>Schedule Reminder</LuxeLabel>
       </Pressable>
@@ -130,6 +132,7 @@ function ComposeReminder({ onCancel, onSubmit }: { onCancel: () => void; onSubmi
 function ReminderItem({ item, onToggle, onSnooze, onDelete }: {
   item: Reminder; onToggle: () => void; onSnooze: () => void; onDelete: () => void;
 }) {
+  const accent = useAccentColor();
   const at = new Date(item.remindAt);
   return (
     <PlannerCard>
@@ -139,8 +142,8 @@ function ReminderItem({ item, onToggle, onSnooze, onDelete }: {
             className="items-center justify-center"
             style={{
               width: 26, height: 26, borderRadius: 13,
-              borderWidth: 1.5, borderColor: item.done ? colors.gold : colors.border,
-              backgroundColor: item.done ? colors.gold : "transparent",
+              borderWidth: 1.5, borderColor: item.done ? accent : colors.border,
+              backgroundColor: item.done ? accent : "transparent",
             }}
           >
             {item.done ? <Feather name="check" size={15} color={colors.bg} /> : null}
@@ -157,7 +160,7 @@ function ReminderItem({ item, onToggle, onSnooze, onDelete }: {
             </Text>
             {item.repeat !== "none" && (
               <View style={{ backgroundColor: colors.elevated, borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2 }}>
-                <Text style={{ color: colors.gold, fontSize: 9, textTransform: "uppercase" }}>{item.repeat}</Text>
+                <Text style={{ color: accent, fontSize: 9, textTransform: "uppercase" }}>{item.repeat}</Text>
               </View>
             )}
           </View>

@@ -16,6 +16,7 @@ import { useReminderStore, upcomingReminders } from "../src/store/reminders";
 import { useBreakpoint } from "../src/lib/responsive";
 import { formatLongDate, formatTime, parseDayKey } from "../src/lib/date";
 import { PLANNER_MODULES } from "../src/constants/modules";
+import { useAccentColor } from "../src/hooks/useAccent";
 import { colors } from "../src/theme";
 
 export default function Dashboard() {
@@ -92,9 +93,10 @@ function CardLink({ onPress }: { onPress: () => void }) {
 
 function DateCard({ dayKey }: { dayKey: string }) {
   const d = parseDayKey(dayKey);
+  const accent = useAccentColor();
   return (
     <PlannerCard accent="gold">
-      <LuxeLabel size={11} color={colors.gold}>Today</LuxeLabel>
+      <LuxeLabel size={11} color={accent}>Today</LuxeLabel>
       <Text style={{ color: colors.ink, fontSize: 44, fontWeight: "800", marginTop: 6 }}>
         {String(d.getDate()).padStart(2, "0")}
       </Text>
@@ -119,6 +121,7 @@ function PriorityCard({ items, onToggle, onOpen }: { items: any[]; onToggle: (id
 }
 
 function ReminderCard({ items, onOpen }: { items: any[]; onOpen: () => void }) {
+  const accent = useAccentColor();
   return (
     <PlannerCard>
       <SectionHeader title="Today's Reminders" right={<CardLink onPress={onOpen} />} />
@@ -127,7 +130,7 @@ function ReminderCard({ items, onOpen }: { items: any[]; onOpen: () => void }) {
       ) : (
         items.map((r) => (
           <View key={r.id} className="flex-row items-center py-2">
-            <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: colors.gold, marginRight: 10 }} />
+            <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: accent, marginRight: 10 }} />
             <Text style={{ color: colors.ink, fontSize: 14, flex: 1 }} numberOfLines={1}>{r.title}</Text>
             <Text style={{ color: colors.inkMuted, fontSize: 12 }}>{formatTime(new Date(r.remindAt))}</Text>
           </View>
@@ -177,10 +180,11 @@ function HealthCard({ water, steps, sleep, mood, onOpen }: { water: number; step
 }
 
 function Metric({ label, value, icon }: { label: string; value: string; icon: any }) {
+  const accent = useAccentColor();
   return (
     <View style={{ minWidth: 78 }}>
       <View className="flex-row items-center" style={{ gap: 6 }}>
-        <Feather name={icon} size={13} color={colors.gold} />
+        <Feather name={icon} size={13} color={accent} />
         <LuxeLabel size={9} color={colors.inkMuted}>{label}</LuxeLabel>
       </View>
       <Text style={{ color: colors.ink, fontSize: 18, fontWeight: "700", marginTop: 4 }}>{value}</Text>
@@ -214,12 +218,13 @@ function MealCard({ breakfast, lunch, dinner, onOpen }: { breakfast: string; lun
 
 function ScheduleCard({ dayKey, onOpen }: { dayKey: string; onOpen: () => void }) {
   const d = parseDayKey(dayKey);
+  const accent = useAccentColor();
   return (
     <PlannerCard onPress={onOpen}>
       <SectionHeader title="Monthly Schedule" right={<CardLink onPress={onOpen} />} />
       <View className="flex-row items-center" style={{ gap: 12 }}>
         <View style={{ width: 48, height: 48, borderRadius: 12, backgroundColor: colors.bgDeep, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: colors.border }}>
-          <Feather name="calendar" size={20} color={colors.gold} />
+          <Feather name="calendar" size={20} color={accent} />
         </View>
         <View>
           <Text style={{ color: colors.ink, fontSize: 15, fontWeight: "600" }}>
@@ -234,12 +239,13 @@ function ScheduleCard({ dayKey, onOpen }: { dayKey: string; onOpen: () => void }
 
 function QuickLinksCard() {
   const router = useRouter();
+  const accent = useAccentColor();
   return (
     <PlannerCard>
       <SectionHeader title="Quick Links" />
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
         {PLANNER_MODULES.map((mod) => {
-          const tint = mod.accent === "love" ? colors.love : colors.gold;
+          const tint = mod.accent === "love" ? colors.love : accent;
           return (
             <Pressable
               key={mod.key}

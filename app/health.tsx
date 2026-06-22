@@ -4,6 +4,7 @@ import { Screen, PlannerCard, SectionHeader, DateSwitcher, ProgressSlider, Edita
 import { LuxeLabel } from "../src/components/LuxeText";
 import { useDayScreen } from "../src/hooks/useDayScreen";
 import { useDayStore } from "../src/store/day";
+import { useAccentColor } from "../src/hooks/useAccent";
 import { colors } from "../src/theme";
 
 const MOODS = [
@@ -18,6 +19,7 @@ export default function HealthScreen() {
   const { dayKey, goPrev, goNext, goToday } = useDayScreen();
   const health = useDayStore((s) => s.health);
   const update = useDayStore((s) => s.updateHealth);
+  const accent = useAccentColor();
 
   if (!health) return <Screen title="Health & Fitness"><View /></Screen>;
 
@@ -54,11 +56,11 @@ export default function HealthScreen() {
                 style={{
                   paddingVertical: 12, paddingHorizontal: 10, borderRadius: 16, flex: 1, marginHorizontal: 3,
                   backgroundColor: active ? colors.elevated : "transparent",
-                  borderWidth: 1, borderColor: active ? colors.gold : colors.border,
+                  borderWidth: 1, borderColor: active ? accent : colors.border,
                 }}
               >
                 <Text style={{ fontSize: 24 }}>{m.e}</Text>
-                <LuxeLabel size={8} color={active ? colors.gold : colors.inkFaint} style={{ marginTop: 6 }}>{m.label}</LuxeLabel>
+                <LuxeLabel size={8} color={active ? accent : colors.inkFaint} style={{ marginTop: 6 }}>{m.label}</LuxeLabel>
               </Pressable>
             );
           })}

@@ -3,6 +3,7 @@ import { Platform, Pressable, Text, View, Modal } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import DateTimePicker, { DateTimePickerAndroid } from "@react-native-community/datetimepicker";
 import { colors } from "../theme";
+import { useAccent } from "../hooks/useAccent";
 import { dayKey, parseDayKey, formatLongDate } from "../lib/date";
 
 interface Props {
@@ -14,9 +15,10 @@ interface Props {
 }
 
 /** Date-only chooser that emits a YYYY-MM-DD day key. */
-export function DateField({ value, onChange, placeholder = "Set date", accent = "gold", compact }: Props) {
+export function DateField({ value, onChange, placeholder = "Set date", accent, compact }: Props) {
+  const globalAccent = useAccent();
   const [iosOpen, setIosOpen] = useState(false);
-  const tint = accent === "love" ? colors.love : colors.gold;
+  const tint = (accent ?? globalAccent) === "love" ? colors.love : colors.gold;
   const current = value ? parseDayKey(value) : new Date();
 
   const open = () => {

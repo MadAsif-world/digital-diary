@@ -5,6 +5,7 @@ import DateTimePicker, {
   DateTimePickerAndroid,
 } from "@react-native-community/datetimepicker";
 import { colors } from "../theme";
+import { useAccent } from "../hooks/useAccent";
 import { LuxeLabel } from "./LuxeText";
 import { formatTime } from "../lib/date";
 
@@ -19,10 +20,11 @@ interface Props {
  * Cross-platform date + time chooser for reminders. Android uses the imperative
  * dialogs (date then time); iOS presents an inline spinner in a sheet.
  */
-export function ReminderTimePicker({ label, value, onChange, accent = "gold" }: Props) {
+export function ReminderTimePicker({ label, value, onChange, accent }: Props) {
+  const globalAccent = useAccent();
   const [iosOpen, setIosOpen] = useState(false);
   const [iosMode, setIosMode] = useState<"date" | "time">("date");
-  const tint = accent === "love" ? colors.love : colors.gold;
+  const tint = (accent ?? globalAccent) === "love" ? colors.love : colors.gold;
 
   const openAndroid = () => {
     DateTimePickerAndroid.open({
