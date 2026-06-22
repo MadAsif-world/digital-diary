@@ -56,6 +56,13 @@
     ],
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "7d91633f-5686-439a-b6ab-33787ef68bda"
+      }
+    },
+    "owner": "madasif"
   }
 }
