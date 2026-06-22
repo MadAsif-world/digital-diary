@@ -22,7 +22,7 @@
     },
     "android": {
       "package": "com.digitaldiary.app",
-      "softwareKeyboardLayoutMode": "resize"
+      "softwareKeyboardLayoutMode": "pan"
     },
     "web": {
       "bundler": "metro",
