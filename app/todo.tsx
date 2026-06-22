@@ -47,64 +47,67 @@ export default function TodoScreen() {
   };
 
   return (
-    <Screen title="To-Do" subtitle="Capture, sort, and clear your tasks" contentPadBottom={60}>
-      {/* Add bar */}
-      <PlannerCard elevated style={{ marginBottom: 16 }}>
-        <View className="flex-row items-center" style={{ gap: 10 }}>
-          <Pressable
-            onPress={() => setLevel(LEVELS[(LEVELS.indexOf(level) + 1) % LEVELS.length])}
-            style={{ width: 14, height: 14, borderRadius: 7, backgroundColor: LEVEL_COLOR[level] }}
-          />
-          <TextInput
-            value={title}
-            onChangeText={setTitle}
-            placeholder="Add a task…"
-            placeholderTextColor={colors.inkFaint}
-            style={{ flex: 1, color: colors.ink, fontSize: 15 }}
-            onSubmitEditing={submit}
-            returnKeyType="done"
-          />
-          <Pressable onPress={submit} hitSlop={8}>
-            <Feather name="plus-circle" size={26} color={accent} />
-          </Pressable>
-        </View>
-      </PlannerCard>
+    <View style={{ flex: 1, backgroundColor: colors.bg }}>
+      <Screen title="To-Do" subtitle="Capture, sort, and clear your tasks" contentPadBottom={24}>
+        {filtered.length === 0 ? (
+          <PlannerCard>
+            <EmptyState
+              icon={filter === "done" ? "archive" : "check-circle"}
+              title={filter === "done" ? "No completed tasks" : "Nothing here yet"}
+              hint={filter === "today" ? "Tasks due today will appear here." : "Add a task to get started."}
+            />
+          </PlannerCard>
+        ) : (
+          <View style={{ gap: 10 }}>
+            {filtered.map((t) => (
+              <TaskItem key={t.id} task={t} onToggle={() => toggle(t.id)} onUpdate={(p) => update(t.id, p)} onDelete={() => remove(t.id)} />
+            ))}
+          </View>
+        )}
+      </Screen>
 
-      {/* Filter tabs */}
-      <View className="flex-row" style={{ gap: 8, marginBottom: 14 }}>
-        {(["today", "all", "done"] as Filter[]).map((f) => (
-          <Pressable
-            key={f}
-            onPress={() => setFilter(f)}
-            style={{
-              paddingHorizontal: 16, paddingVertical: 8, borderRadius: 999,
-              backgroundColor: filter === f ? accent : colors.card,
-              borderWidth: 1, borderColor: filter === f ? accent : colors.border,
-            }}
-          >
-            <LuxeLabel size={10} color={filter === f ? colors.bg : colors.inkMuted}>
-              {f === "done" ? "Completed" : f}
-            </LuxeLabel>
-          </Pressable>
-        ))}
-      </View>
-
-      {filtered.length === 0 ? (
-        <PlannerCard>
-          <EmptyState
-            icon={filter === "done" ? "archive" : "check-circle"}
-            title={filter === "done" ? "No completed tasks" : "Nothing here yet"}
-            hint={filter === "today" ? "Tasks due today will appear here." : "Add a task to get started."}
-          />
-        </PlannerCard>
-      ) : (
-        <View style={{ gap: 10 }}>
-          {filtered.map((t) => (
-            <TaskItem key={t.id} task={t} onToggle={() => toggle(t.id)} onUpdate={(p) => update(t.id, p)} onDelete={() => remove(t.id)} />
+      {/* Controls docked at the bottom, within thumb reach */}
+      <View style={{ backgroundColor: colors.bgDeep, borderTopWidth: 1, borderTopColor: colors.border, paddingHorizontal: 16, paddingTop: 12, paddingBottom: 12, gap: 12 }}>
+        <View className="flex-row" style={{ gap: 8 }}>
+          {(["today", "all", "done"] as Filter[]).map((f) => (
+            <Pressable
+              key={f}
+              onPress={() => setFilter(f)}
+              style={{
+                paddingHorizontal: 16, paddingVertical: 8, borderRadius: 999,
+                backgroundColor: filter === f ? accent : colors.card,
+                borderWidth: 1, borderColor: filter === f ? accent : colors.border,
+              }}
+            >
+              <LuxeLabel size={10} color={filter === f ? colors.bg : colors.inkMuted}>
+                {f === "done" ? "Completed" : f}
+              </LuxeLabel>
+            </Pressable>
           ))}
         </View>
-      )}
-    </Screen>
+
+        <PlannerCard elevated style={{ marginBottom: 0 }}>
+          <View className="flex-row items-center" style={{ gap: 10 }}>
+            <Pressable
+              onPress={() => setLevel(LEVELS[(LEVELS.indexOf(level) + 1) % LEVELS.length])}
+              style={{ width: 14, height: 14, borderRadius: 7, backgroundColor: LEVEL_COLOR[level] }}
+            />
+            <TextInput
+              value={title}
+              onChangeText={setTitle}
+              placeholder="Add a task…"
+              placeholderTextColor={colors.inkFaint}
+              style={{ flex: 1, color: colors.ink, fontSize: 15 }}
+              onSubmitEditing={submit}
+              returnKeyType="done"
+            />
+            <Pressable onPress={submit} hitSlop={8}>
+              <Feather name="plus-circle" size={26} color={accent} />
+            </Pressable>
+          </View>
+        </PlannerCard>
+      </View>
+    </View>
   );
 }
 

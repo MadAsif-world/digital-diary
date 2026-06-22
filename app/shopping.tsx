@@ -42,50 +42,80 @@ export default function ShoppingScreen() {
   };
 
   return (
-    <Screen title="Shopping" subtitle="Lists, categorised" contentPadBottom={60}>
-      {/* List selector */}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 16 }} contentContainerStyle={{ gap: 8 }}>
-        {lists.map((l) => {
-          const active = l.id === activeListId;
-          return (
-            <Pressable
-              key={l.id}
-              onPress={() => setActiveList(l.id)}
-              onLongPress={() => removeList(l.id)}
-              style={{
-                paddingHorizontal: 16, paddingVertical: 9, borderRadius: 999,
-                backgroundColor: active ? accent : colors.card,
-                borderWidth: 1, borderColor: active ? accent : colors.border,
-              }}
-            >
-              <LuxeLabel size={10} color={active ? colors.bg : colors.inkMuted}>{l.name}</LuxeLabel>
-            </Pressable>
-          );
-        })}
-        {adding ? (
-          <View className="flex-row items-center" style={{ gap: 6 }}>
-            <TextInput
-              value={newList}
-              onChangeText={setNewList}
-              autoFocus
-              placeholder="List name"
-              placeholderTextColor={colors.inkFaint}
-              onSubmitEditing={async () => { if (newList.trim()) { await addList(newList.trim()); setNewList(""); setAdding(false); } }}
-              style={{ color: colors.ink, backgroundColor: colors.card, borderRadius: 999, borderWidth: 1, borderColor: accent, paddingHorizontal: 14, paddingVertical: 8, minWidth: 120 }}
-            />
-          </View>
+    <View style={{ flex: 1, backgroundColor: colors.bg }}>
+      <Screen title="Shopping" subtitle="Lists, categorised" contentPadBottom={24}>
+        {!activeListId ? (
+          <PlannerCard><EmptyState icon="shopping-bag" title="No list selected" hint="Create a list below to start adding items." /></PlannerCard>
         ) : (
-          <Pressable onPress={() => setAdding(true)} style={{ paddingHorizontal: 14, paddingVertical: 9, borderRadius: 999, borderWidth: 1, borderColor: colors.border }}>
-            <Feather name="plus" size={16} color={accent} />
-          </Pressable>
-        )}
-      </ScrollView>
+          <>
+            {estTotal > 0 && (
+              <View className="flex-row items-center justify-between" style={{ marginBottom: 12, paddingHorizontal: 4 }}>
+                <LuxeLabel size={10} color={colors.inkMuted}>Estimated total</LuxeLabel>
+                <Text style={{ color: accent, fontWeight: "700", fontSize: 15 }}>{formatCurrency(estTotal)}</Text>
+              </View>
+            )}
 
-      {!activeListId ? (
-        <PlannerCard><EmptyState icon="shopping-bag" title="No list selected" hint="Create a list to start adding items." /></PlannerCard>
-      ) : (
-        <>
-          <PlannerCard elevated style={{ marginBottom: 16 }}>
+            {current.length === 0 ? (
+              <PlannerCard><EmptyState icon="check-square" title="List is empty" hint="Add your first item below." /></PlannerCard>
+            ) : (
+              <PlannerCard>
+                {current.map((it, i) => (
+                  <ShoppingRow
+                    key={it.id}
+                    item={it}
+                    last={i === current.length - 1}
+                    onToggle={() => toggleItem(activeListId, it.id)}
+                    onUpdate={(p) => updateItem(activeListId, it.id, p)}
+                    onDelete={() => removeItem(activeListId, it.id)}
+                  />
+                ))}
+              </PlannerCard>
+            )}
+          </>
+        )}
+      </Screen>
+
+      {/* List selector + add-item docked at the bottom, within thumb reach */}
+      <View style={{ backgroundColor: colors.bgDeep, borderTopWidth: 1, borderTopColor: colors.border, paddingHorizontal: 16, paddingTop: 12, paddingBottom: 12, gap: 12 }}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
+          {lists.map((l) => {
+            const active = l.id === activeListId;
+            return (
+              <Pressable
+                key={l.id}
+                onPress={() => setActiveList(l.id)}
+                onLongPress={() => removeList(l.id)}
+                style={{
+                  paddingHorizontal: 16, paddingVertical: 9, borderRadius: 999,
+                  backgroundColor: active ? accent : colors.card,
+                  borderWidth: 1, borderColor: active ? accent : colors.border,
+                }}
+              >
+                <LuxeLabel size={10} color={active ? colors.bg : colors.inkMuted}>{l.name}</LuxeLabel>
+              </Pressable>
+            );
+          })}
+          {adding ? (
+            <View className="flex-row items-center" style={{ gap: 6 }}>
+              <TextInput
+                value={newList}
+                onChangeText={setNewList}
+                autoFocus
+                placeholder="List name"
+                placeholderTextColor={colors.inkFaint}
+                onSubmitEditing={async () => { if (newList.trim()) { await addList(newList.trim()); setNewList(""); setAdding(false); } }}
+                style={{ color: colors.ink, backgroundColor: colors.card, borderRadius: 999, borderWidth: 1, borderColor: accent, paddingHorizontal: 14, paddingVertical: 8, minWidth: 120 }}
+              />
+            </View>
+          ) : (
+            <Pressable onPress={() => setAdding(true)} style={{ paddingHorizontal: 14, paddingVertical: 9, borderRadius: 999, borderWidth: 1, borderColor: colors.border }}>
+              <Feather name="plus" size={16} color={accent} />
+            </Pressable>
+          )}
+        </ScrollView>
+
+        {activeListId && (
+          <PlannerCard elevated style={{ marginBottom: 0 }}>
             <View className="flex-row items-center" style={{ gap: 10 }}>
               <Feather name="plus-circle" size={22} color={accent} />
               <TextInput
@@ -99,33 +129,9 @@ export default function ShoppingScreen() {
               />
             </View>
           </PlannerCard>
-
-          {estTotal > 0 && (
-            <View className="flex-row items-center justify-between" style={{ marginBottom: 12, paddingHorizontal: 4 }}>
-              <LuxeLabel size={10} color={colors.inkMuted}>Estimated total</LuxeLabel>
-              <Text style={{ color: accent, fontWeight: "700", fontSize: 15 }}>{formatCurrency(estTotal)}</Text>
-            </View>
-          )}
-
-          {current.length === 0 ? (
-            <PlannerCard><EmptyState icon="check-square" title="List is empty" hint="Add your first item above." /></PlannerCard>
-          ) : (
-            <PlannerCard>
-              {current.map((it, i) => (
-                <ShoppingRow
-                  key={it.id}
-                  item={it}
-                  last={i === current.length - 1}
-                  onToggle={() => toggleItem(activeListId, it.id)}
-                  onUpdate={(p) => updateItem(activeListId, it.id, p)}
-                  onDelete={() => removeItem(activeListId, it.id)}
-                />
-              ))}
-            </PlannerCard>
-          )}
-        </>
-      )}
-    </Screen>
+        )}
+      </View>
+    </View>
   );
 }
 
