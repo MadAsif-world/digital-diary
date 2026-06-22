@@ -21,11 +21,15 @@ npm start          # expo start (dev server / Metro)
 npm run web        # run in browser
 npm run android    # run on Android
 npm run ios        # run on iOS
-npm run lint       # expo lint
 npm run typecheck  # tsc --noEmit
 ```
 
-Always run `npm run typecheck` (and `npm run lint`) before committing.
+Always run `npm run typecheck` before committing.
+
+> ⚠️ Do NOT add `eslint` / `eslint-config-expo` to dependencies. They pull in
+> `unrs-resolver`'s platform-specific WASM bindings (`@emnapi/*`), which don't
+> lock cleanly across OSes and break EAS's `npm ci --include=dev` on Linux. If
+> you need to lint, run it without committing those deps to package.json.
 
 ## Tech stack
 
