@@ -19,15 +19,20 @@ export function Screen({ title, subtitle, right, children, scroll = true, conten
   const { isTablet } = useBreakpoint();
   const maxWidth = isTablet ? 1100 : undefined;
 
+  // Phone: stack the title above the controls so the title never gets crushed
+  // into a narrow column and wraps. Tablet: keep them side by side.
   const header = (
-    <View className="flex-row items-end justify-between" style={{ marginBottom: 20 }}>
-      <View style={{ flex: 1 }}>
-        <Title>{title}</Title>
+    <View
+      className={isTablet ? "flex-row items-end justify-between" : undefined}
+      style={{ marginBottom: 20 }}
+    >
+      <View style={isTablet ? { flex: 1 } : undefined}>
+        <Title numberOfLines={1}>{title}</Title>
         {subtitle ? (
           <Text style={{ color: colors.inkMuted, fontSize: 14, marginTop: 4 }}>{subtitle}</Text>
         ) : null}
       </View>
-      {right}
+      {right ? <View style={isTablet ? undefined : { marginTop: 14 }}>{right}</View> : null}
     </View>
   );
 
