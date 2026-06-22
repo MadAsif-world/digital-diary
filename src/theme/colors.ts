@@ -1,5 +1,5 @@
 /**
- * Aura Planner — core color palette.
+ * Digital Diary — core color palette.
  * Mirrors tailwind.config.js so we can reach the same values from places where
  * className styling isn't ergonomic (icon tint, native pickers, SVG, gradients).
  */
