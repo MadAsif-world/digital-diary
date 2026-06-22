@@ -36,3 +36,6 @@ yarn-error.*
 
 # Leftover duplicate Expo clone (locked empty dir, ignore)
 digital-diary/
+
+# local npm-ci verification scratch dirs
+_citest*/
