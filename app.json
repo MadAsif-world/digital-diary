@@ -21,7 +21,8 @@
       }
     },
     "android": {
-      "package": "com.digitaldiary.app"
+      "package": "com.digitaldiary.app",
+      "softwareKeyboardLayoutMode": "resize"
     },
     "web": {
       "bundler": "metro",
