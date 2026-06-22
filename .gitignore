@@ -39,3 +39,7 @@ digital-diary/
 
 # local npm-ci verification scratch dirs
 _citest*/
+
+# Lockfile generated on Windows is inconsistent with EAS's Linux npm ci.
+# Omitting it makes EAS use 'npm install' (fresh resolve) instead. See AGENTS.md.
+package-lock.json

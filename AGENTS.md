@@ -31,6 +31,12 @@ Always run `npm run typecheck` before committing.
 > lock cleanly across OSes and break EAS's `npm ci --include=dev` on Linux. If
 > you need to lint, run it without committing those deps to package.json.
 
+> ⚠️ `package-lock.json` is intentionally git-ignored (not committed). The
+> Windows-generated lockfile was inconsistent with EAS's Linux npm, so `npm ci`
+> kept failing on transitive packages. Without a committed lockfile, EAS runs
+> `npm install` (fresh resolve), which builds reliably. Re-introduce a committed
+> lockfile only if it's generated in a Linux/CI environment matching EAS.
+
 ## Tech stack
 
 - **Expo SDK 54**, React Native 0.81, React 19
