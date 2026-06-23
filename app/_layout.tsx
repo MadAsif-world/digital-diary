@@ -1,6 +1,6 @@
 import "../global.css";
 import React, { useEffect, useState } from "react";
-import { View, Text, ActivityIndicator } from "react-native";
+import { View, Text, ActivityIndicator, AppState } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
@@ -21,6 +21,20 @@ export default function RootLayout() {
       .catch((e) => setError(String(e?.message ?? e)))
       .finally(() => SplashScreen.hideAsync().catch(() => {}));
   }, [init]);
+
+  // Keep "today" honest: re-check the device date when the app returns to the
+  // foreground and once a minute (covers reopen + midnight rollover).
+  useEffect(() => {
+    const tick = () => void useAppStore.getState().tickToday();
+    const sub = AppState.addEventListener("change", (s) => {
+      if (s === "active") tick();
+    });
+    const id = setInterval(tick, 60_000);
+    return () => {
+      sub.remove();
+      clearInterval(id);
+    };
+  }, []);
 
   return (
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: colors.bg }}>

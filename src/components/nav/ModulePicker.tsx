@@ -83,7 +83,7 @@ export function ModulePicker({ visible, onClose }: Props) {
           // Center item bulges left into the screen; neighbours recede right.
           const translateX = scrollY.interpolate({ inputRange, outputRange: [56, 30, -24, 30, 56], extrapolate: "clamp" });
           const scale = scrollY.interpolate({ inputRange, outputRange: [0.66, 0.82, 1.16, 0.82, 0.66], extrapolate: "clamp" });
-          const opacity = scrollY.interpolate({ inputRange, outputRange: [0.18, 0.5, 1, 0.5, 0.18], extrapolate: "clamp" });
+          const opacity = scrollY.interpolate({ inputRange, outputRange: [0.55, 0.78, 1, 0.78, 0.55], extrapolate: "clamp" });
 
           const isCenter = i === centerIndex;
           const tint = mod.accent === "love" ? colors.love : accent;
@@ -99,7 +99,7 @@ export function ModulePicker({ visible, onClose }: Props) {
                     <Text style={{ color: colors.ink, fontSize: 18, fontWeight: "700" }}>{mod.label}</Text>
                   </View>
                 ) : (
-                  <Text style={{ color: colors.inkFaint, fontSize: 16, fontWeight: "600" }}>{mod.label}</Text>
+                  <Text style={{ color: colors.inkMuted, fontSize: 16, fontWeight: "600" }}>{mod.label}</Text>
                 )}
                 <View
                   style={{

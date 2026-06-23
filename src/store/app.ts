@@ -9,10 +9,14 @@ interface AppState {
   settings: UserSettings | null;
   /** The planner "page" currently being viewed across day-scoped modules. */
   selectedDayKey: string;
+  /** The device's current calendar day; refreshed on foreground / midnight. */
+  todayKey: string;
   plannerDay: PlannerDay | null;
 
   init: () => Promise<void>;
   setDay: (key: string) => Promise<void>;
+  /** Re-check the device date; advance the view if it was sitting on "today". */
+  tickToday: () => Promise<void>;
   loadPlannerDay: (key: string) => Promise<void>;
   saveThought: (text: string) => Promise<void>;
   updateSettings: (patch: Partial<UserSettings>) => Promise<void>;
@@ -22,6 +26,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   ready: false,
   settings: null,
   selectedDayKey: dayKey(),
+  todayKey: dayKey(),
   plannerDay: null,
 
   init: async () => {
@@ -34,6 +39,14 @@ export const useAppStore = create<AppState>((set, get) => ({
   setDay: async (key) => {
     set({ selectedDayKey: key });
     await get().loadPlannerDay(key);
+  },
+
+  tickToday: async () => {
+    const now = dayKey();
+    if (now === get().todayKey) return;
+    const wasOnToday = get().selectedDayKey === get().todayKey;
+    set({ todayKey: now });
+    if (wasOnToday) await get().setDay(now);
   },
 
   loadPlannerDay: async (key) => {
