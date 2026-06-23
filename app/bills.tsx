@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { View, Text, TextInput, Pressable } from "react-native";
 import { Feather } from "@expo/vector-icons";
-import { Screen, PlannerCard, StatCard, EmptyState, FloatingAddButton } from "../src/components";
+import { Screen, PlannerCard, StatCard, EmptyState, FloatingAddButton, EditableTextBlock } from "../src/components";
 import { LuxeLabel } from "../src/components/LuxeText";
 import { DateField } from "../src/components/DateField";
 import { useBillStore, billTotals } from "../src/store/bills";
@@ -142,6 +142,15 @@ function BillItem({ bill, onTogglePaid, onUpdate, onDelete }: {
       </View>
       {expanded && (
         <View style={{ marginTop: 12, gap: 10 }}>
+          <EditableTextBlock value={bill.name} onSave={(n) => onUpdate({ name: n })} placeholder="Bill name" />
+          <TextInput
+            defaultValue={bill.amount ? String(bill.amount) : ""}
+            onEndEditing={(e) => onUpdate({ amount: parseFloat(e.nativeEvent.text) || 0 })}
+            placeholder="Amount"
+            placeholderTextColor={colors.inkFaint}
+            keyboardType="decimal-pad"
+            style={{ color: colors.ink, fontSize: 14, backgroundColor: colors.bgDeep, borderRadius: 12, borderWidth: 1, borderColor: colors.border, paddingHorizontal: 12, paddingVertical: 10 }}
+          />
           <DateField value={bill.dueDate} onChange={(d) => onUpdate({ dueDate: d })} />
           <TextInput
             defaultValue={bill.notes}

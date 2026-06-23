@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { View, Text, TextInput, Pressable, ScrollView } from "react-native";
 import { Feather } from "@expo/vector-icons";
-import { Screen, PlannerCard, CheckboxRow, EmptyState } from "../src/components";
+import { Screen, PlannerCard, CheckboxRow, EmptyState, EditableTextBlock } from "../src/components";
 import { LuxeLabel } from "../src/components/LuxeText";
 import { useShoppingStore } from "../src/store/shopping";
 import { formatCurrency } from "../src/lib/date";
@@ -155,8 +155,10 @@ function ShoppingRow({ item, last, onToggle, onUpdate, onDelete }: {
         }
       />
       {expanded && (
-        <View className="flex-row" style={{ gap: 10, paddingBottom: 12, paddingLeft: 36 }}>
-          <Stepper label="Qty" value={item.quantity} onChange={(q) => onUpdate({ quantity: Math.max(1, q) })} />
+        <View style={{ gap: 10, paddingBottom: 12, paddingLeft: 36 }}>
+          <EditableTextBlock value={item.name} onSave={(n) => onUpdate({ name: n })} placeholder="Item name" />
+          <View className="flex-row" style={{ gap: 10 }}>
+            <Stepper label="Qty" value={item.quantity} onChange={(q) => onUpdate({ quantity: Math.max(1, q) })} />
           <TextInput
             defaultValue={item.category === "General" ? "" : item.category}
             placeholder="Category"
@@ -172,6 +174,7 @@ function ShoppingRow({ item, last, onToggle, onUpdate, onDelete }: {
             onEndEditing={(e) => onUpdate({ estPrice: parseFloat(e.nativeEvent.text) || null })}
             style={{ width: 70, color: colors.ink, fontSize: 13, backgroundColor: colors.bgDeep, borderRadius: 10, borderWidth: 1, borderColor: colors.border, paddingHorizontal: 10, paddingVertical: 7 }}
           />
+          </View>
         </View>
       )}
     </View>

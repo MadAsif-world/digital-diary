@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { View, Text, TextInput, Pressable } from "react-native";
 import { Feather } from "@expo/vector-icons";
-import { Screen, PlannerCard, CheckboxRow, EmptyState } from "../src/components";
+import { Screen, PlannerCard, CheckboxRow, EmptyState, EditableTextBlock } from "../src/components";
 import { LuxeLabel } from "../src/components/LuxeText";
 import { DateField } from "../src/components/DateField";
 import { useTaskStore } from "../src/store/tasks";
@@ -132,6 +132,12 @@ function TaskItem({ task, onToggle, onUpdate, onDelete }: {
       />
       {expanded && (
         <View style={{ marginTop: 10, gap: 10 }}>
+          <View className="flex-row items-center" style={{ gap: 10 }}>
+            <LuxeLabel size={9} color={colors.inkMuted} style={{ width: 70 }}>Title</LuxeLabel>
+            <View style={{ flex: 1 }}>
+              <EditableTextBlock value={task.title} onSave={(t) => onUpdate({ title: t })} placeholder="Task title" />
+            </View>
+          </View>
           <View className="flex-row items-center" style={{ gap: 10 }}>
             <LuxeLabel size={9} color={colors.inkMuted} style={{ width: 70 }}>Category</LuxeLabel>
             <TextInput
