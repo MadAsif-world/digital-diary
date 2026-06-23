@@ -7,6 +7,8 @@ import type {
 
 export const settingsRepo = new Repository<UserSettings>("user_settings", [
   "displayName", "themeAccent", "startOfWeek", "notificationsEnabled", "onboardedAt",
+  "waterGoalMl", "stepsGoal", "sleepGoalHours", "meditationGoalMin", "workoutGoalMin",
+  "waterReminderEnabled", "waterReminderEveryMin", "breathReminderEnabled", "breathReminderTime",
 ]);
 
 export const plannerDayRepo = new Repository<PlannerDay>("planner_days", [

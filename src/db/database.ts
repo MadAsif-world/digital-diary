@@ -21,12 +21,57 @@ export function db(): SQLite.SQLiteDatabase {
 
 let _initPromise: Promise<void> | null = null;
 
-/** Idempotent. Creates tables, sets the schema version, and seeds first-run data. */
+/**
+ * Incremental migrations for databases created on an older SCHEMA_VERSION.
+ * Each step is applied in its own try/catch so a re-run (or a column that
+ * already exists) is harmless. New installs skip these — CREATE TABLE in
+ * SCHEMA_SQL already includes the columns.
+ */
+const MIGRATIONS: Record<number, string[]> = {
+  2: [
+    `ALTER TABLE user_settings ADD COLUMN waterGoalMl INTEGER NOT NULL DEFAULT 2000`,
+    `ALTER TABLE user_settings ADD COLUMN stepsGoal INTEGER NOT NULL DEFAULT 8000`,
+    `ALTER TABLE user_settings ADD COLUMN sleepGoalHours REAL NOT NULL DEFAULT 8`,
+    `ALTER TABLE user_settings ADD COLUMN meditationGoalMin INTEGER NOT NULL DEFAULT 10`,
+    `ALTER TABLE user_settings ADD COLUMN workoutGoalMin INTEGER NOT NULL DEFAULT 30`,
+    `ALTER TABLE user_settings ADD COLUMN waterReminderEnabled INTEGER NOT NULL DEFAULT 0`,
+    `ALTER TABLE user_settings ADD COLUMN waterReminderEveryMin INTEGER NOT NULL DEFAULT 120`,
+    `ALTER TABLE user_settings ADD COLUMN breathReminderEnabled INTEGER NOT NULL DEFAULT 0`,
+    `ALTER TABLE user_settings ADD COLUMN breathReminderTime TEXT NOT NULL DEFAULT '09:00'`,
+  ],
+};
+
+async function storedVersion(database: SQLite.SQLiteDatabase): Promise<number> {
+  try {
+    const row = await database.getFirstAsync<{ value: string }>(
+      `SELECT value FROM _meta WHERE key = 'schema_version'`,
+    );
+    return row ? Number(row.value) : 0;
+  } catch {
+    return 0; // _meta doesn't exist yet → brand new database
+  }
+}
+
+async function runMigrations(database: SQLite.SQLiteDatabase, from: number): Promise<void> {
+  for (let v = from + 1; v <= SCHEMA_VERSION; v++) {
+    for (const sql of MIGRATIONS[v] ?? []) {
+      try {
+        await database.execAsync(sql);
+      } catch {
+        // Column already present (fresh DB or partial prior run) — safe to skip.
+      }
+    }
+  }
+}
+
+/** Idempotent. Creates tables, runs migrations, sets the schema version, seeds. */
 export function initDatabase(): Promise<void> {
   if (_initPromise) return _initPromise;
   _initPromise = (async () => {
     const database = db();
+    const prev = await storedVersion(database);
     await database.execAsync(SCHEMA_SQL);
+    if (prev > 0 && prev < SCHEMA_VERSION) await runMigrations(database, prev);
     await database.runAsync(
       `INSERT OR REPLACE INTO _meta (key, value) VALUES ('schema_version', ?)`,
       [String(SCHEMA_VERSION)],
@@ -48,13 +93,16 @@ async function seedFirstRun(database: SQLite.SQLiteDatabase) {
     return { id, localId: id, ts };
   };
 
-  // Default settings row.
+  // Default settings row (incl. v2 goal/reminder defaults so web seeds match).
   const s = envelope();
   await database.runAsync(
     `INSERT INTO user_settings
       (id, localId, userId, createdAt, updatedAt, deletedAt, syncStatus,
-       displayName, themeAccent, startOfWeek, notificationsEnabled, onboardedAt)
-     VALUES (?, ?, NULL, ?, ?, NULL, 'local', '', 'gold', 0, 1, NULL)`,
+       displayName, themeAccent, startOfWeek, notificationsEnabled, onboardedAt,
+       waterGoalMl, stepsGoal, sleepGoalHours, meditationGoalMin, workoutGoalMin,
+       waterReminderEnabled, waterReminderEveryMin, breathReminderEnabled, breathReminderTime)
+     VALUES (?, ?, NULL, ?, ?, NULL, 'local', '', 'gold', 0, 1, NULL,
+       2000, 8000, 8, 10, 30, 0, 120, 0, '09:00')`,
     [s.id, s.localId, s.ts, s.ts],
   );
 

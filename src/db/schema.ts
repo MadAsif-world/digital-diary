@@ -14,7 +14,7 @@ const SYNC_COLUMNS = `
   syncStatus TEXT NOT NULL DEFAULT 'local'
 `;
 
-export const SCHEMA_VERSION = 1;
+export const SCHEMA_VERSION = 2;
 
 export const SCHEMA_SQL = `
 PRAGMA journal_mode = WAL;
@@ -26,7 +26,16 @@ CREATE TABLE IF NOT EXISTS user_settings (
   themeAccent TEXT NOT NULL DEFAULT 'gold',
   startOfWeek INTEGER NOT NULL DEFAULT 0,
   notificationsEnabled INTEGER NOT NULL DEFAULT 1,
-  onboardedAt TEXT
+  onboardedAt TEXT,
+  waterGoalMl INTEGER NOT NULL DEFAULT 2000,
+  stepsGoal INTEGER NOT NULL DEFAULT 8000,
+  sleepGoalHours REAL NOT NULL DEFAULT 8,
+  meditationGoalMin INTEGER NOT NULL DEFAULT 10,
+  workoutGoalMin INTEGER NOT NULL DEFAULT 30,
+  waterReminderEnabled INTEGER NOT NULL DEFAULT 0,
+  waterReminderEveryMin INTEGER NOT NULL DEFAULT 120,
+  breathReminderEnabled INTEGER NOT NULL DEFAULT 0,
+  breathReminderTime TEXT NOT NULL DEFAULT '09:00'
 );
 
 CREATE TABLE IF NOT EXISTS planner_days (

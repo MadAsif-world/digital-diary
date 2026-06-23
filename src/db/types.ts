@@ -34,7 +34,27 @@ export interface UserSettings extends SyncBase {
   startOfWeek: number; // 0 = Sunday
   notificationsEnabled: number; // 0 | 1
   onboardedAt: string | null;
+  // Personal health goals (schema v2)
+  waterGoalMl: number;
+  stepsGoal: number;
+  sleepGoalHours: number;
+  meditationGoalMin: number;
+  workoutGoalMin: number;
+  // Wellness reminders (schema v2)
+  waterReminderEnabled: number; // 0 | 1
+  waterReminderEveryMin: number;
+  breathReminderEnabled: number; // 0 | 1
+  breathReminderTime: string; // HH:mm
 }
+
+/** Fallback goal values when a settings row predates schema v2 (e.g. web). */
+export const DEFAULT_GOALS = {
+  waterGoalMl: 2000,
+  stepsGoal: 8000,
+  sleepGoalHours: 8,
+  meditationGoalMin: 10,
+  workoutGoalMin: 30,
+} as const;
 
 export interface PlannerDay extends SyncBase {
   dayKey: string; // YYYY-MM-DD

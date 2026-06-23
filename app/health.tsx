@@ -1,10 +1,13 @@
 import React from "react";
 import { View, Text, Pressable } from "react-native";
+import { Feather } from "@expo/vector-icons";
 import { Screen, PlannerCard, SectionHeader, DateSwitcher, ProgressSlider, EditableTextBlock } from "../src/components";
 import { LuxeLabel } from "../src/components/LuxeText";
 import { useDayScreen } from "../src/hooks/useDayScreen";
 import { useDayStore } from "../src/store/day";
+import { useAppStore } from "../src/store/app";
 import { useAccentColor } from "../src/hooks/useAccent";
+import { DEFAULT_GOALS } from "../src/db/types";
 import { colors } from "../src/theme";
 
 const MOODS = [
@@ -15,13 +18,28 @@ const MOODS = [
   { v: 5, e: "😄", label: "Great" },
 ];
 
+const fmt = (n: number) => (Number.isInteger(n) ? String(n) : n.toFixed(1));
+
 export default function HealthScreen() {
   const { dayKey, goPrev, goNext, goToday } = useDayScreen();
   const health = useDayStore((s) => s.health);
   const update = useDayStore((s) => s.updateHealth);
+  const settings = useAppStore((s) => s.settings);
+  const updateSettings = useAppStore((s) => s.updateSettings);
   const accent = useAccentColor();
 
   if (!health) return <Screen title="Health & Fitness"><View /></Screen>;
+
+  // Goals live on user_settings; fall back to defaults for pre-v2 rows (e.g. web).
+  const g = {
+    water: settings?.waterGoalMl ?? DEFAULT_GOALS.waterGoalMl,
+    steps: settings?.stepsGoal ?? DEFAULT_GOALS.stepsGoal,
+    sleep: settings?.sleepGoalHours ?? DEFAULT_GOALS.sleepGoalHours,
+    meditation: settings?.meditationGoalMin ?? DEFAULT_GOALS.meditationGoalMin,
+    workout: settings?.workoutGoalMin ?? DEFAULT_GOALS.workoutGoalMin,
+  };
+  const bumpGoal = (field: keyof typeof DEFAULT_GOALS, next: number) =>
+    void updateSettings({ [field]: Math.max(0, Math.round(next * 100) / 100) });
 
   return (
     <Screen
@@ -30,7 +48,16 @@ export default function HealthScreen() {
       right={<DateSwitcher dayKey={dayKey} onPrev={goPrev} onNext={goNext} onToday={goToday} />}
     >
       <PlannerCard style={{ marginBottom: 14 }}>
-        <SectionHeader title="Activity" chip />
+        <SectionHeader title="Today's Goals" chip />
+        <GoalRow icon="droplet" label="Water" value={health.waterMl} goal={g.water} unit="ml" step={250} onGoal={(d) => bumpGoal("waterGoalMl", g.water + d)} />
+        <GoalRow icon="activity" label="Steps" value={health.steps} goal={g.steps} unit="" step={1000} onGoal={(d) => bumpGoal("stepsGoal", g.steps + d)} />
+        <GoalRow icon="moon" label="Sleep" value={health.sleepHours} goal={g.sleep} unit="h" step={0.5} onGoal={(d) => bumpGoal("sleepGoalHours", g.sleep + d)} />
+        <GoalRow icon="wind" label="Meditation" value={health.meditationMin} goal={g.meditation} unit="min" step={5} onGoal={(d) => bumpGoal("meditationGoalMin", g.meditation + d)} />
+        <GoalRow icon="zap" label="Workout" value={health.workoutMin} goal={g.workout} unit="min" step={5} onGoal={(d) => bumpGoal("workoutGoalMin", g.workout + d)} last />
+      </PlannerCard>
+
+      <PlannerCard style={{ marginBottom: 14 }}>
+        <SectionHeader title="Log Activity" chip />
         <ProgressSlider label="Meditation" value={health.meditationMin} max={60} step={5} unit="min" onChange={(v) => update({ meditationMin: v })} />
         <ProgressSlider label="Yoga" value={health.yogaMin} max={60} step={5} unit="min" onChange={(v) => update({ yogaMin: v })} />
         <ProgressSlider label="Workouts" value={health.workoutMin} max={120} step={5} unit="min" onChange={(v) => update({ workoutMin: v })} />
@@ -38,7 +65,7 @@ export default function HealthScreen() {
       </PlannerCard>
 
       <PlannerCard style={{ marginBottom: 14 }}>
-        <SectionHeader title="Body" chip />
+        <SectionHeader title="Log Body" chip />
         <ProgressSlider label="Water" value={health.waterMl} max={4000} step={250} unit="ml" onChange={(v) => update({ waterMl: v })} />
         <ProgressSlider label="Sleep" value={health.sleepHours} min={0} max={12} step={0.5} unit="hrs" onChange={(v) => update({ sleepHours: v })} />
       </PlannerCard>
@@ -72,5 +99,39 @@ export default function HealthScreen() {
         <EditableTextBlock value={health.note} onSave={(note) => update({ note })} multiline placeholder="How did your body feel today?" />
       </PlannerCard>
     </Screen>
+  );
+}
+
+function GoalRow({
+  icon, label, value, goal, unit, step, onGoal, last,
+}: {
+  icon: React.ComponentProps<typeof Feather>["name"];
+  label: string; value: number; goal: number; unit: string; step: number;
+  onGoal: (delta: number) => void; last?: boolean;
+}) {
+  const accent = useAccentColor();
+  const pct = goal > 0 ? Math.min(1, value / goal) : 0;
+  const reached = goal > 0 && value >= goal;
+  const barColor = reached ? colors.success : accent;
+  return (
+    <View style={{ marginBottom: last ? 0 : 16 }}>
+      <View className="flex-row items-center justify-between" style={{ marginBottom: 8 }}>
+        <View className="flex-row items-center" style={{ gap: 8 }}>
+          <Feather name={icon} size={15} color={barColor} />
+          <LuxeLabel size={11} color={colors.ink}>{label}</LuxeLabel>
+        </View>
+        <View className="flex-row items-center" style={{ gap: 12 }}>
+          <Pressable onPress={() => onGoal(-step)} hitSlop={8}><Feather name="minus-circle" size={18} color={colors.inkMuted} /></Pressable>
+          <Text style={{ color: colors.inkMuted, fontSize: 12, minWidth: 78, textAlign: "center" }}>Goal {fmt(goal)}{unit}</Text>
+          <Pressable onPress={() => onGoal(step)} hitSlop={8}><Feather name="plus-circle" size={18} color={accent} /></Pressable>
+        </View>
+      </View>
+      <View style={{ height: 8, borderRadius: 4, backgroundColor: colors.bgDeep, overflow: "hidden" }}>
+        <View style={{ width: `${pct * 100}%`, height: 8, borderRadius: 4, backgroundColor: barColor }} />
+      </View>
+      <Text style={{ color: reached ? colors.success : colors.inkMuted, fontSize: 11, marginTop: 5 }}>
+        {fmt(value)} / {fmt(goal)}{unit} · {Math.round(pct * 100)}%{reached ? "  ✓ reached" : ""}
+      </Text>
+    </View>
   );
 }
