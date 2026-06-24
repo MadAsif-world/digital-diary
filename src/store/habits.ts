@@ -15,16 +15,13 @@ interface HabitState {
   toggle: (habitId: string, day: string) => Promise<void>;
 }
 
-const WINDOW_DAYS = 41; // ~6 weeks of history is plenty for the strip + streaks
-
 export const useHabitStore = create<HabitState>((set, get) => ({
   habits: [],
   logs: {},
 
   load: async () => {
     const habits = await habitRepo.all("position ASC, createdAt ASC");
-    const since = addDays(dayKey(), -WINDOW_DAYS);
-    const rows = await habitLogRepo.where("dayKey >= ?", [since], "dayKey ASC");
+    const rows = await habitLogRepo.all("dayKey ASC");
     const logs: Record<string, string[]> = {};
     for (const r of rows) (logs[r.habitId] ??= []).push(r.dayKey);
     set({ habits, logs });
