@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text, Pressable } from "react-native";
+import { View, Text, Pressable, Switch } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { Screen, PlannerCard, SectionHeader, DateSwitcher, ProgressSlider, EditableTextBlock } from "../src/components";
 import { LuxeLabel } from "../src/components/LuxeText";
@@ -7,8 +7,12 @@ import { useDayScreen } from "../src/hooks/useDayScreen";
 import { useDayStore } from "../src/store/day";
 import { useAppStore } from "../src/store/app";
 import { useAccentColor } from "../src/hooks/useAccent";
+import { scheduleWaterReminder, scheduleBreathReminder, cancelWellnessReminder } from "../src/notifications";
 import { DEFAULT_GOALS } from "../src/db/types";
 import { colors } from "../src/theme";
+
+const clamp = (n: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, n));
+const pad2 = (n: number) => String(n).padStart(2, "0");
 
 const MOODS = [
   { v: 1, e: "😔", label: "Low" },
@@ -41,6 +45,35 @@ export default function HealthScreen() {
   const bumpGoal = (field: keyof typeof DEFAULT_GOALS, next: number) =>
     void updateSettings({ [field]: Math.max(0, Math.round(next * 100) / 100) });
 
+  // Wellness reminders (water / breath) — persisted on settings, scheduled as
+  // OS notifications (no-op on web / Expo Go; fires in a real build).
+  const waterEnabled = !!settings?.waterReminderEnabled;
+  const waterEveryMin = settings?.waterReminderEveryMin ?? 120;
+  const breathEnabled = !!settings?.breathReminderEnabled;
+  const breathTime = settings?.breathReminderTime ?? "09:00";
+
+  const toggleWater = async (on: boolean) => {
+    await updateSettings({ waterReminderEnabled: on ? 1 : 0 });
+    if (on) await scheduleWaterReminder(waterEveryMin);
+    else await cancelWellnessReminder("water");
+  };
+  const stepWater = async (delta: number) => {
+    const v = clamp(waterEveryMin + delta, 30, 480);
+    await updateSettings({ waterReminderEveryMin: v });
+    if (waterEnabled) await scheduleWaterReminder(v);
+  };
+  const toggleBreath = async (on: boolean) => {
+    await updateSettings({ breathReminderEnabled: on ? 1 : 0 });
+    if (on) await scheduleBreathReminder(breathTime);
+    else await cancelWellnessReminder("breath");
+  };
+  const stepBreathHour = async (delta: number) => {
+    const [h, m] = breathTime.split(":").map(Number);
+    const t = `${pad2((h + delta + 24) % 24)}:${pad2(m || 0)}`;
+    await updateSettings({ breathReminderTime: t });
+    if (breathEnabled) await scheduleBreathReminder(t);
+  };
+
   return (
     <Screen
       title="Health & Fitness"
@@ -54,6 +87,29 @@ export default function HealthScreen() {
         <GoalRow icon="moon" label="Sleep" value={health.sleepHours} goal={g.sleep} unit="h" step={0.5} onGoal={(d) => bumpGoal("sleepGoalHours", g.sleep + d)} />
         <GoalRow icon="wind" label="Meditation" value={health.meditationMin} goal={g.meditation} unit="min" step={5} onGoal={(d) => bumpGoal("meditationGoalMin", g.meditation + d)} />
         <GoalRow icon="zap" label="Workout" value={health.workoutMin} goal={g.workout} unit="min" step={5} onGoal={(d) => bumpGoal("workoutGoalMin", g.workout + d)} last />
+      </PlannerCard>
+
+      <PlannerCard style={{ marginBottom: 14 }}>
+        <SectionHeader title="Wellness Reminders" chip />
+        <WellnessRow
+          icon="droplet"
+          label="Drink water"
+          enabled={waterEnabled}
+          detail={waterEveryMin % 60 === 0 ? `Every ${waterEveryMin / 60}h` : `Every ${waterEveryMin} min`}
+          onToggle={(v) => void toggleWater(v)}
+          onDown={() => void stepWater(-30)}
+          onUp={() => void stepWater(30)}
+        />
+        <WellnessRow
+          icon="wind"
+          label="Breathe"
+          enabled={breathEnabled}
+          detail={`Daily at ${breathTime}`}
+          onToggle={(v) => void toggleBreath(v)}
+          onDown={() => void stepBreathHour(-1)}
+          onUp={() => void stepBreathHour(1)}
+          last
+        />
       </PlannerCard>
 
       <PlannerCard style={{ marginBottom: 14 }}>
@@ -99,6 +155,39 @@ export default function HealthScreen() {
         <EditableTextBlock value={health.note} onSave={(note) => update({ note })} multiline placeholder="How did your body feel today?" />
       </PlannerCard>
     </Screen>
+  );
+}
+
+function WellnessRow({
+  icon, label, enabled, detail, onToggle, onDown, onUp, last,
+}: {
+  icon: React.ComponentProps<typeof Feather>["name"];
+  label: string; enabled: boolean; detail: string;
+  onToggle: (v: boolean) => void; onDown: () => void; onUp: () => void; last?: boolean;
+}) {
+  const accent = useAccentColor();
+  return (
+    <View style={{ marginBottom: last ? 0 : 14 }}>
+      <View className="flex-row items-center justify-between">
+        <View className="flex-row items-center" style={{ gap: 8 }}>
+          <Feather name={icon} size={15} color={enabled ? accent : colors.inkMuted} />
+          <LuxeLabel size={11} color={colors.ink}>{label}</LuxeLabel>
+        </View>
+        <Switch
+          value={enabled}
+          onValueChange={onToggle}
+          trackColor={{ true: accent, false: colors.border }}
+          thumbColor={colors.ink}
+        />
+      </View>
+      {enabled && (
+        <View className="flex-row items-center" style={{ gap: 12, marginTop: 8, marginLeft: 23 }}>
+          <Pressable onPress={onDown} hitSlop={8}><Feather name="minus-circle" size={18} color={colors.inkMuted} /></Pressable>
+          <Text style={{ color: colors.inkMuted, fontSize: 12, minWidth: 92, textAlign: "center" }}>{detail}</Text>
+          <Pressable onPress={onUp} hitSlop={8}><Feather name="plus-circle" size={18} color={accent} /></Pressable>
+        </View>
+      )}
+    </View>
   );
 }
 

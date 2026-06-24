@@ -23,6 +23,18 @@ export async function scheduleReminder(_opts: {
   return null;
 }
 
+export async function scheduleWaterReminder(_everyMin: number): Promise<boolean> {
+  return false;
+}
+
+export async function scheduleBreathReminder(_hhmm: string): Promise<boolean> {
+  return false;
+}
+
+export async function cancelWellnessReminder(_kind: "water" | "breath"): Promise<void> {
+  /* no-op on web */
+}
+
 export async function cancelReminder(_notificationId: string | null): Promise<void> {
   /* no-op on web */
 }

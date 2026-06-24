@@ -124,6 +124,65 @@ export async function scheduleReminder(opts: {
   });
 }
 
+// Wellness reminders use fixed identifiers so we can cancel/reschedule them
+// without tracking generated ids.
+const WATER_ID = "wellness-water";
+const BREATH_ID = "wellness-breath";
+
+/** Schedule a repeating "drink water" reminder every `everyMin` minutes. */
+export async function scheduleWaterReminder(everyMin: number): Promise<boolean> {
+  const N = getNotifications();
+  if (!N) return false;
+  if (!(await ensureNotificationPermissions())) return false;
+  await N.cancelScheduledNotificationAsync(WATER_ID).catch(() => {});
+  await N.scheduleNotificationAsync({
+    identifier: WATER_ID,
+    content: {
+      title: "Time to hydrate 💧",
+      body: "Take a sip of water.",
+      sound: true,
+      ...(Platform.OS === "android" ? { channelId: "reminders" } : {}),
+    },
+    trigger: {
+      type: N.SchedulableTriggerInputTypes.TIME_INTERVAL,
+      seconds: Math.max(60, Math.round(everyMin * 60)),
+      repeats: true,
+    },
+  });
+  return true;
+}
+
+/** Schedule a daily "breathe" reminder at HH:mm. */
+export async function scheduleBreathReminder(hhmm: string): Promise<boolean> {
+  const N = getNotifications();
+  if (!N) return false;
+  if (!(await ensureNotificationPermissions())) return false;
+  const [h, m] = hhmm.split(":").map((n) => parseInt(n, 10));
+  await N.cancelScheduledNotificationAsync(BREATH_ID).catch(() => {});
+  await N.scheduleNotificationAsync({
+    identifier: BREATH_ID,
+    content: {
+      title: "Breathe 🌿",
+      body: "Pause for a few slow, deep breaths.",
+      sound: true,
+      ...(Platform.OS === "android" ? { channelId: "reminders" } : {}),
+    },
+    trigger: {
+      type: N.SchedulableTriggerInputTypes.DAILY,
+      hour: Number.isFinite(h) ? h : 9,
+      minute: Number.isFinite(m) ? m : 0,
+    },
+  });
+  return true;
+}
+
+/** Cancel a wellness reminder by kind. */
+export async function cancelWellnessReminder(kind: "water" | "breath"): Promise<void> {
+  const N = getNotifications();
+  if (!N) return;
+  await N.cancelScheduledNotificationAsync(kind === "water" ? WATER_ID : BREATH_ID).catch(() => {});
+}
+
 export async function cancelReminder(notificationId: string | null): Promise<void> {
   const N = getNotifications();
   if (!N || !notificationId) return;
