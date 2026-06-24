@@ -1,14 +1,17 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { View, Text, TextInput, Pressable } from "react-native";
 import { Feather } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 import { Screen, PlannerCard, SectionHeader, EmptyState, IconButton } from "../src/components";
 import { LuxeLabel } from "../src/components/LuxeText";
 import { useEventStore } from "../src/store/events";
 import { useAppStore } from "../src/store/app";
+import { useTaskStore } from "../src/store/tasks";
+import { useReminderStore } from "../src/store/reminders";
 import { useAccentColor } from "../src/hooks/useAccent";
-import { monthMatrix, parseDayKey, dayKey as todayKey, formatLongDate, formatMonthYear } from "../src/lib/date";
+import { monthMatrix, parseDayKey, dayKey, dayKey as todayKey, formatLongDate, formatMonthYear, formatTime } from "../src/lib/date";
 import { colors } from "../src/theme";
-import type { EventKind } from "../src/db/types";
+import type { EventKind, Task, Reminder } from "../src/db/types";
 
 const DOW = ["S", "M", "T", "W", "T", "F", "S"];
 const KINDS: { k: EventKind; label: string; color: string }[] = [
@@ -18,25 +21,67 @@ const KINDS: { k: EventKind; label: string; color: string }[] = [
 ];
 
 export default function ScheduleScreen() {
+  const router = useRouter();
   const byDay = useEventStore((s) => s.byDay);
   const loadMonth = useEventStore((s) => s.loadMonth);
   const add = useEventStore((s) => s.add);
   const remove = useEventStore((s) => s.remove);
+
+  // The calendar drives the app-wide selected day, so picking a date here also
+  // moves Priorities / Health / Meals / Dashboard to that day.
+  const selected = useAppStore((s) => s.selectedDayKey);
   const setDay = useAppStore((s) => s.setDay);
+
+  const tasks = useTaskStore((s) => s.tasks);
+  const loadTasks = useTaskStore((s) => s.load);
+  const toggleTask = useTaskStore((s) => s.toggle);
+  const reminders = useReminderStore((s) => s.reminders);
+  const loadReminders = useReminderStore((s) => s.load);
+
   const accent = useAccentColor();
 
-  const today = parseDayKey(todayKey());
-  const [year, setYear] = useState(today.getFullYear());
-  const [month, setMonth] = useState(today.getMonth());
-  const [selected, setSelected] = useState(todayKey());
+  const sel = parseDayKey(selected);
+  const [year, setYear] = useState(sel.getFullYear());
+  const [month, setMonth] = useState(sel.getMonth());
 
   const [title, setTitle] = useState("");
   const [kind, setKind] = useState<EventKind>("event");
 
   useEffect(() => { void loadMonth(year, month); }, [year, month, loadMonth]);
+  useEffect(() => { void loadTasks(); void loadReminders(); }, [loadTasks, loadReminders]);
+
+  // Follow the selected day's month when it changes elsewhere (e.g. dashboard).
+  useEffect(() => {
+    const d = parseDayKey(selected);
+    setYear(d.getFullYear());
+    setMonth(d.getMonth());
+  }, [selected]);
 
   const weeks = useMemo(() => monthMatrix(year, month), [year, month]);
+
+  const taskByDay = useMemo(() => {
+    const m: Record<string, Task[]> = {};
+    for (const t of tasks) if (!t.done && t.dueDate) (m[t.dueDate] ??= []).push(t);
+    return m;
+  }, [tasks]);
+
+  const reminderByDay = useMemo(() => {
+    const m: Record<string, Reminder[]> = {};
+    for (const r of reminders) {
+      if (r.done) continue;
+      const k = dayKey(new Date(r.remindAt));
+      (m[k] ??= []).push(r);
+    }
+    return m;
+  }, [reminders]);
+
+  const hasItems = (k: string) =>
+    (byDay[k]?.length ?? 0) > 0 || (taskByDay[k]?.length ?? 0) > 0 || (reminderByDay[k]?.length ?? 0) > 0;
+
   const selectedEvents = byDay[selected] ?? [];
+  const selectedTasks = taskByDay[selected] ?? [];
+  const selectedReminders = reminderByDay[selected] ?? [];
+  const empty = !selectedEvents.length && !selectedTasks.length && !selectedReminders.length;
 
   const stepMonth = (delta: number) => {
     let m = month + delta;
@@ -76,9 +121,9 @@ export default function ScheduleScreen() {
               const d = parseDayKey(cell);
               const isSel = cell === selected;
               const isToday = cell === todayKey();
-              const has = (byDay[cell]?.length ?? 0) > 0;
+              const has = hasItems(cell);
               return (
-                <Pressable key={ci} onPress={() => setSelected(cell)} style={{ flex: 1, aspectRatio: 1, alignItems: "center", justifyContent: "center" }}>
+                <Pressable key={ci} onPress={() => void setDay(cell)} style={{ flex: 1, aspectRatio: 1, alignItems: "center", justifyContent: "center" }}>
                   <View
                     className="items-center justify-center"
                     style={{
@@ -91,7 +136,7 @@ export default function ScheduleScreen() {
                       {d.getDate()}
                     </Text>
                   </View>
-                  {has ? <View style={{ width: 5, height: 5, borderRadius: 3, backgroundColor: accent, marginTop: 2 }} /> : <View style={{ height: 7 }} />}
+                  {has ? <View style={{ width: 5, height: 5, borderRadius: 3, backgroundColor: isSel ? accent : colors.inkMuted, marginTop: 2 }} /> : <View style={{ height: 7 }} />}
                 </Pressable>
               );
             })}
@@ -100,22 +145,14 @@ export default function ScheduleScreen() {
       </PlannerCard>
 
       <PlannerCard>
-        <SectionHeader
-          title={formatLongDate(selected)}
-          right={
-            <Pressable onPress={() => setDay(selected)} hitSlop={8} className="flex-row items-center" style={{ gap: 4 }}>
-              <LuxeLabel size={9} color={accent}>Open day</LuxeLabel>
-              <Feather name="arrow-up-right" size={14} color={accent} />
-            </Pressable>
-          }
-        />
+        <SectionHeader title={formatLongDate(selected)} />
 
-        {/* Add bar */}
+        {/* Add an event to this day */}
         <View className="flex-row items-center" style={{ gap: 10, marginBottom: 8 }}>
           <TextInput
             value={title}
             onChangeText={setTitle}
-            placeholder="Add to this day…"
+            placeholder="Add an event to this day…"
             placeholderTextColor={colors.inkFaint}
             style={{ flex: 1, color: colors.ink, fontSize: 15, backgroundColor: colors.bgDeep, borderRadius: 12, borderWidth: 1, borderColor: colors.border, paddingHorizontal: 12, paddingVertical: 10 }}
             onSubmitEditing={submit}
@@ -141,20 +178,45 @@ export default function ScheduleScreen() {
           ))}
         </View>
 
-        {selectedEvents.length === 0 ? (
-          <EmptyState icon="calendar" title="Nothing planned" hint="Add an event, task, or reminder above." />
+        {empty ? (
+          <EmptyState icon="calendar" title="Nothing on this day" hint="Add an event above, or a task/reminder from their tabs." />
         ) : (
-          selectedEvents.map((ev) => {
-            const dot = KINDS.find((k) => k.k === ev.kind)?.color ?? colors.gold;
-            return (
-              <View key={ev.id} className="flex-row items-center py-2.5" style={{ gap: 10 }}>
-                <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: dot }} />
-                <Text style={{ color: colors.ink, fontSize: 14, flex: 1 }}>{ev.title}</Text>
-                {ev.time ? <Text style={{ color: colors.inkMuted, fontSize: 12 }}>{ev.time}</Text> : null}
-                <Pressable onPress={() => remove(ev.id, selected)} hitSlop={6}><Feather name="trash-2" size={16} color={colors.inkFaint} /></Pressable>
+          <View>
+            {/* Tasks due this day (from To-Do) */}
+            {selectedTasks.map((t) => (
+              <View key={t.id} className="flex-row items-center py-2.5" style={{ gap: 10 }}>
+                <Pressable onPress={() => void toggleTask(t.id)} hitSlop={8}>
+                  <View style={{ width: 20, height: 20, borderRadius: 6, borderWidth: 1.5, borderColor: colors.success }} />
+                </Pressable>
+                <Pressable style={{ flex: 1 }} onPress={() => router.push("/todo")}>
+                  <Text style={{ color: colors.ink, fontSize: 14 }}>{t.title}</Text>
+                </Pressable>
+                <Feather name="check-square" size={14} color={colors.success} />
               </View>
-            );
-          })
+            ))}
+
+            {/* Reminders this day */}
+            {selectedReminders.map((r) => (
+              <Pressable key={r.id} className="flex-row items-center py-2.5" style={{ gap: 10 }} onPress={() => router.push("/reminders")}>
+                <Feather name="bell" size={15} color={colors.loveSoft} />
+                <Text style={{ color: colors.ink, fontSize: 14, flex: 1 }}>{r.title}</Text>
+                <Text style={{ color: colors.inkMuted, fontSize: 12 }}>{formatTime(new Date(r.remindAt))}</Text>
+              </Pressable>
+            ))}
+
+            {/* Calendar events on this day */}
+            {selectedEvents.map((ev) => {
+              const dot = KINDS.find((k) => k.k === ev.kind)?.color ?? colors.gold;
+              return (
+                <View key={ev.id} className="flex-row items-center py-2.5" style={{ gap: 10 }}>
+                  <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: dot }} />
+                  <Text style={{ color: colors.ink, fontSize: 14, flex: 1 }}>{ev.title}</Text>
+                  {ev.time ? <Text style={{ color: colors.inkMuted, fontSize: 12 }}>{ev.time}</Text> : null}
+                  <Pressable onPress={() => remove(ev.id, selected)} hitSlop={6}><Feather name="trash-2" size={16} color={colors.inkFaint} /></Pressable>
+                </View>
+              );
+            })}
+          </View>
         )}
       </PlannerCard>
     </Screen>
