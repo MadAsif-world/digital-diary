@@ -1,6 +1,6 @@
 import { Repository } from "./repository";
 import type {
-  UserSettings, PlannerDay, Priority, Task, Reminder, Bill,
+  UserSettings, PlannerDay, Priority, Task, TaskList, Reminder, Bill,
   ShoppingList, ShoppingItem, Note, HealthLog, MealPlan,
   LoveMeterEntry, CalendarEvent,
 } from "./types";
@@ -19,8 +19,12 @@ export const priorityRepo = new Repository<Priority>("priorities", [
   "dayKey", "text", "note", "done", "position",
 ]);
 
+export const taskListRepo = new Repository<TaskList>("task_lists", [
+  "name", "position",
+]);
+
 export const taskRepo = new Repository<Task>("tasks", [
-  "title", "category", "dueDate", "level", "done", "completedAt",
+  "listId", "title", "category", "dueDate", "level", "done", "completedAt",
 ]);
 
 export const reminderRepo = new Repository<Reminder>("reminders", [

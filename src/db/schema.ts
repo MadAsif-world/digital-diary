@@ -14,7 +14,7 @@ const SYNC_COLUMNS = `
   syncStatus TEXT NOT NULL DEFAULT 'local'
 `;
 
-export const SCHEMA_VERSION = 2;
+export const SCHEMA_VERSION = 3;
 
 export const SCHEMA_SQL = `
 PRAGMA journal_mode = WAL;
@@ -55,8 +55,15 @@ CREATE TABLE IF NOT EXISTS priorities (
 );
 CREATE INDEX IF NOT EXISTS idx_priorities_daykey ON priorities(dayKey);
 
+CREATE TABLE IF NOT EXISTS task_lists (
+  ${SYNC_COLUMNS},
+  name TEXT NOT NULL DEFAULT '',
+  position INTEGER NOT NULL DEFAULT 0
+);
+
 CREATE TABLE IF NOT EXISTS tasks (
   ${SYNC_COLUMNS},
+  listId TEXT,
   title TEXT NOT NULL DEFAULT '',
   category TEXT NOT NULL DEFAULT 'General',
   dueDate TEXT,
@@ -65,6 +72,7 @@ CREATE TABLE IF NOT EXISTS tasks (
   completedAt TEXT
 );
 CREATE INDEX IF NOT EXISTS idx_tasks_due ON tasks(dueDate);
+CREATE INDEX IF NOT EXISTS idx_tasks_list ON tasks(listId);
 
 CREATE TABLE IF NOT EXISTS reminders (
   ${SYNC_COLUMNS},

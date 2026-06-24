@@ -39,6 +39,15 @@ const MIGRATIONS: Record<number, string[]> = {
     `ALTER TABLE user_settings ADD COLUMN breathReminderEnabled INTEGER NOT NULL DEFAULT 0`,
     `ALTER TABLE user_settings ADD COLUMN breathReminderTime TEXT NOT NULL DEFAULT '09:00'`,
   ],
+  3: [
+    `CREATE TABLE IF NOT EXISTS task_lists (
+      id TEXT PRIMARY KEY NOT NULL, localId TEXT NOT NULL, userId TEXT,
+      createdAt TEXT NOT NULL, updatedAt TEXT NOT NULL, deletedAt TEXT,
+      syncStatus TEXT NOT NULL DEFAULT 'local',
+      name TEXT NOT NULL DEFAULT '', position INTEGER NOT NULL DEFAULT 0
+    )`,
+    `ALTER TABLE tasks ADD COLUMN listId TEXT`,
+  ],
 };
 
 async function storedVersion(database: SQLite.SQLiteDatabase): Promise<number> {
@@ -77,8 +86,39 @@ export function initDatabase(): Promise<void> {
       [String(SCHEMA_VERSION)],
     );
     await seedFirstRun(database);
+    await ensureTaskListDefaults(database);
   })();
   return _initPromise;
+}
+
+/**
+ * Guarantee at least one task list exists and that no task is orphaned. Runs on
+ * every init so both fresh installs and v2→v3 upgrades (whose existing tasks
+ * have a NULL listId) end up consistent. Uses per-row updates so the web
+ * adapter — which only understands `WHERE id = ?` — works too.
+ */
+async function ensureTaskListDefaults(database: SQLite.SQLiteDatabase) {
+  const existing = await database.getFirstAsync<{ id: string }>(
+    `SELECT id FROM task_lists WHERE deletedAt IS NULL ORDER BY position LIMIT 1`,
+  );
+  let listId = existing?.id;
+  if (!listId) {
+    const ts = nowIso();
+    const id = uuid();
+    await database.runAsync(
+      `INSERT INTO task_lists
+        (id, localId, userId, createdAt, updatedAt, deletedAt, syncStatus, name, position)
+       VALUES (?, ?, NULL, ?, ?, NULL, 'local', 'My Tasks', 0)`,
+      [id, id, ts, ts],
+    );
+    listId = id;
+  }
+  const orphans = await database.getAllAsync<{ id: string }>(
+    `SELECT id FROM tasks WHERE listId IS NULL`,
+  );
+  for (const o of orphans) {
+    await database.runAsync(`UPDATE tasks SET listId = ? WHERE id = ?`, [listId, o.id]);
+  }
 }
 
 async function seedFirstRun(database: SQLite.SQLiteDatabase) {

@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { View, Text, TextInput, Pressable } from "react-native";
+import { View, Text, TextInput, Pressable, ScrollView } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { Screen, PlannerCard, CheckboxRow, EmptyState, EditableTextBlock } from "../src/components";
 import { LuxeLabel } from "../src/components/LuxeText";
@@ -18,7 +18,12 @@ const LEVEL_COLOR: Record<PriorityLevel, string> = {
 
 export default function TodoScreen() {
   const tasks = useTaskStore((s) => s.tasks);
+  const lists = useTaskStore((s) => s.lists);
+  const activeListId = useTaskStore((s) => s.activeListId);
   const load = useTaskStore((s) => s.load);
+  const setActiveList = useTaskStore((s) => s.setActiveList);
+  const addList = useTaskStore((s) => s.addList);
+  const removeList = useTaskStore((s) => s.removeList);
   const add = useTaskStore((s) => s.add);
   const update = useTaskStore((s) => s.update);
   const toggle = useTaskStore((s) => s.toggle);
@@ -27,17 +32,20 @@ export default function TodoScreen() {
   const [filter, setFilter] = useState<Filter>("today");
   const [title, setTitle] = useState("");
   const [level, setLevel] = useState<PriorityLevel>("medium");
+  const [newList, setNewList] = useState("");
+  const [addingList, setAddingList] = useState(false);
   const accent = useAccentColor();
 
   useEffect(() => { void load(); }, [load]);
 
   const filtered = useMemo(() => {
     const today = dayKey();
-    if (filter === "done") return tasks.filter((t) => t.done);
-    const live = tasks.filter((t) => !t.done);
+    const inList = tasks.filter((t) => t.listId === activeListId);
+    if (filter === "done") return inList.filter((t) => t.done);
+    const live = inList.filter((t) => !t.done);
     if (filter === "today") return live.filter((t) => t.dueDate && t.dueDate <= today);
     return live;
-  }, [tasks, filter]);
+  }, [tasks, filter, activeListId]);
 
   const submit = async () => {
     if (!title.trim()) return;
@@ -68,6 +76,43 @@ export default function TodoScreen() {
 
       {/* Controls docked at the bottom, within thumb reach */}
       <View style={{ backgroundColor: colors.bgDeep, borderTopWidth: 1, borderTopColor: colors.border, paddingHorizontal: 16, paddingTop: 12, paddingBottom: 12, gap: 12 }}>
+        {/* List selector — long-press a list to delete it */}
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
+          {lists.map((l) => {
+            const active = l.id === activeListId;
+            return (
+              <Pressable
+                key={l.id}
+                onPress={() => setActiveList(l.id)}
+                onLongPress={() => { if (lists.length > 1) void removeList(l.id); }}
+                style={{
+                  paddingHorizontal: 16, paddingVertical: 9, borderRadius: 999,
+                  backgroundColor: active ? accent : colors.card,
+                  borderWidth: 1, borderColor: active ? accent : colors.border,
+                }}
+              >
+                <LuxeLabel size={10} color={active ? colors.bg : colors.inkMuted}>{l.name}</LuxeLabel>
+              </Pressable>
+            );
+          })}
+          {addingList ? (
+            <TextInput
+              value={newList}
+              onChangeText={setNewList}
+              autoFocus
+              placeholder="List name"
+              placeholderTextColor={colors.inkFaint}
+              onSubmitEditing={async () => { if (newList.trim()) { await addList(newList.trim()); } setNewList(""); setAddingList(false); }}
+              onBlur={() => { setNewList(""); setAddingList(false); }}
+              style={{ color: colors.ink, backgroundColor: colors.card, borderRadius: 999, borderWidth: 1, borderColor: accent, paddingHorizontal: 14, paddingVertical: 8, minWidth: 120 }}
+            />
+          ) : (
+            <Pressable onPress={() => setAddingList(true)} style={{ paddingHorizontal: 14, paddingVertical: 9, borderRadius: 999, borderWidth: 1, borderColor: colors.border }}>
+              <Feather name="plus" size={16} color={accent} />
+            </Pressable>
+          )}
+        </ScrollView>
+
         <View className="flex-row" style={{ gap: 8 }}>
           {(["today", "all", "done"] as Filter[]).map((f) => (
             <Pressable

@@ -69,7 +69,13 @@ export interface Priority extends SyncBase {
   position: number;
 }
 
+export interface TaskList extends SyncBase {
+  name: string;
+  position: number;
+}
+
 export interface Task extends SyncBase {
+  listId: string | null;
   title: string;
   category: string;
   dueDate: string | null; // YYYY-MM-DD
