@@ -50,6 +50,33 @@ function getNotifications(): NotificationsModule | null {
 
 let _channelReady = false;
 
+export type PermissionState = "granted" | "denied" | "undetermined" | "unsupported";
+
+/** Current OS notification permission (without prompting). */
+export async function getPermissionStatus(): Promise<PermissionState> {
+  const N = getNotifications();
+  if (!N) return "unsupported";
+  const { status } = await N.getPermissionsAsync();
+  return status as PermissionState;
+}
+
+/** Fire a notification ~5s out so the user can confirm delivery on-device. */
+export async function sendTestNotification(): Promise<boolean> {
+  const N = getNotifications();
+  if (!N) return false;
+  if (!(await ensureNotificationPermissions())) return false;
+  await N.scheduleNotificationAsync({
+    content: {
+      title: "Test reminder 🔔",
+      body: "Notifications are working.",
+      sound: true,
+      ...(Platform.OS === "android" ? { channelId: "reminders" } : {}),
+    },
+    trigger: { type: N.SchedulableTriggerInputTypes.TIME_INTERVAL, seconds: 5, repeats: false },
+  });
+  return true;
+}
+
 export async function ensureNotificationPermissions(): Promise<boolean> {
   const N = getNotifications();
   if (!N) return false;

@@ -10,6 +10,16 @@ import type { RepeatRule } from "../db/types";
  * an OS notification on web.
  */
 
+export type PermissionState = "granted" | "denied" | "undetermined" | "unsupported";
+
+export async function getPermissionStatus(): Promise<PermissionState> {
+  return "unsupported";
+}
+
+export async function sendTestNotification(): Promise<boolean> {
+  return false;
+}
+
 export async function ensureNotificationPermissions(): Promise<boolean> {
   return false;
 }

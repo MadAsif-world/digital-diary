@@ -1,11 +1,14 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, TextInput, Pressable } from "react-native";
+import { View, Text, TextInput, Pressable, Alert } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { Controller, useForm } from "react-hook-form";
-import { Screen, PlannerCard, EmptyState, FloatingAddButton } from "../src/components";
+import { Screen, PlannerCard, EmptyState, FloatingAddButton, EditableTextBlock } from "../src/components";
 import { LuxeLabel } from "../src/components/LuxeText";
 import { ReminderTimePicker } from "../src/components/ReminderTimePicker";
 import { useReminderStore } from "../src/store/reminders";
+import {
+  getPermissionStatus, sendTestNotification, ensureNotificationPermissions, type PermissionState,
+} from "../src/notifications";
 import { formatTime } from "../src/lib/date";
 import { useAccentColor } from "../src/hooks/useAccent";
 import { colors } from "../src/theme";
@@ -14,26 +17,62 @@ import type { Reminder, RepeatRule } from "../src/db/types";
 const REPEATS: RepeatRule[] = ["none", "daily", "weekly", "monthly"];
 
 interface FormValues { title: string; note: string; at: Date; repeat: RepeatRule }
+type EditInput = { title?: string; note?: string; at?: Date; repeat?: RepeatRule };
 
 export default function RemindersScreen() {
   const reminders = useReminderStore((s) => s.reminders);
   const load = useReminderStore((s) => s.load);
   const add = useReminderStore((s) => s.add);
+  const edit = useReminderStore((s) => s.edit);
   const toggleDone = useReminderStore((s) => s.toggleDone);
   const snooze = useReminderStore((s) => s.snooze);
   const remove = useReminderStore((s) => s.remove);
 
   const [composing, setComposing] = useState(false);
+  const [perm, setPerm] = useState<PermissionState>("granted");
 
   useEffect(() => { void load(); }, [load]);
+  useEffect(() => { void getPermissionStatus().then(setPerm); }, []);
+
+  const enableNotifications = async () => {
+    await ensureNotificationPermissions();
+    setPerm(await getPermissionStatus());
+  };
+
+  const test = async () => {
+    const ok = await sendTestNotification();
+    setPerm(await getPermissionStatus());
+    Alert.alert(
+      ok ? "Test sent" : "Couldn't send",
+      ok
+        ? "A test notification will arrive in about 5 seconds."
+        : "Enable notifications first. (Notifications only fire in the installed app, not the web preview.)",
+    );
+  };
+
+  const showBanner = perm === "denied" || perm === "undetermined";
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
       <Screen title="Reminders" subtitle="Never miss a beat" contentPadBottom={120}>
+        {showBanner && (
+          <PlannerCard accent="gold" style={{ marginBottom: 14 }}>
+            <View className="flex-row items-center" style={{ gap: 10, marginBottom: 12 }}>
+              <Feather name="bell-off" size={18} color={colors.gold} />
+              <Text style={{ color: colors.ink, fontSize: 14, flex: 1 }}>
+                Turn on notifications so your reminders can actually alert you.
+              </Text>
+            </View>
+            <Pressable onPress={enableNotifications} style={{ backgroundColor: colors.gold, borderRadius: 12, paddingVertical: 12, alignItems: "center" }}>
+              <LuxeLabel size={11} color={colors.bg}>Enable notifications</LuxeLabel>
+            </Pressable>
+          </PlannerCard>
+        )}
+
         {composing && (
           <ComposeReminder
             onCancel={() => setComposing(false)}
-            onSubmit={async (v) => { await add(v); setComposing(false); }}
+            onSubmit={async (v) => { await add(v); setComposing(false); setPerm(await getPermissionStatus()); }}
           />
         )}
 
@@ -50,12 +89,42 @@ export default function RemindersScreen() {
                 onToggle={() => toggleDone(r.id)}
                 onSnooze={() => snooze(r.id, 10)}
                 onDelete={() => remove(r.id)}
+                onEdit={(input) => edit(r.id, input)}
               />
             ))}
           </View>
         )}
+
+        {perm !== "unsupported" && (
+          <Pressable onPress={test} style={{ alignSelf: "center", marginTop: 18 }} hitSlop={8}>
+            <Text style={{ color: colors.inkMuted, fontSize: 12, textDecorationLine: "underline" }}>
+              Send a test notification
+            </Text>
+          </Pressable>
+        )}
       </Screen>
       {!composing && <FloatingAddButton onPress={() => setComposing(true)} />}
+    </View>
+  );
+}
+
+function RepeatChips({ value, onChange }: { value: RepeatRule; onChange: (r: RepeatRule) => void }) {
+  const accent = useAccentColor();
+  return (
+    <View className="flex-row" style={{ gap: 8 }}>
+      {REPEATS.map((rp) => (
+        <Pressable
+          key={rp}
+          onPress={() => onChange(rp)}
+          style={{
+            paddingHorizontal: 14, paddingVertical: 7, borderRadius: 999,
+            backgroundColor: value === rp ? accent : "transparent",
+            borderWidth: 1, borderColor: value === rp ? accent : colors.border,
+          }}
+        >
+          <Text style={{ color: value === rp ? colors.bg : colors.inkMuted, fontSize: 11, textTransform: "capitalize" }}>{rp}</Text>
+        </Pressable>
+      ))}
     </View>
   );
 }
@@ -101,23 +170,11 @@ function ComposeReminder({ onCancel, onSubmit }: { onCancel: () => void; onSubmi
       </View>
 
       <LuxeLabel size={11} color={colors.inkMuted} style={{ marginBottom: 8 }}>Repeat</LuxeLabel>
-      <Controller control={control} name="repeat" render={({ field: { value, onChange } }) => (
-        <View className="flex-row" style={{ gap: 8, marginBottom: 16 }}>
-          {REPEATS.map((rp) => (
-            <Pressable
-              key={rp}
-              onPress={() => onChange(rp)}
-              style={{
-                paddingHorizontal: 14, paddingVertical: 7, borderRadius: 999,
-                backgroundColor: value === rp ? accent : "transparent",
-                borderWidth: 1, borderColor: value === rp ? accent : colors.border,
-              }}
-            >
-              <Text style={{ color: value === rp ? colors.bg : colors.inkMuted, fontSize: 11, textTransform: "capitalize" }}>{rp}</Text>
-            </Pressable>
-          ))}
-        </View>
-      )} />
+      <View style={{ marginBottom: 16 }}>
+        <Controller control={control} name="repeat" render={({ field: { value, onChange } }) => (
+          <RepeatChips value={value} onChange={onChange} />
+        )} />
+      </View>
 
       <Pressable
         onPress={handleSubmit(onSubmit)}
@@ -129,10 +186,11 @@ function ComposeReminder({ onCancel, onSubmit }: { onCancel: () => void; onSubmi
   );
 }
 
-function ReminderItem({ item, onToggle, onSnooze, onDelete }: {
-  item: Reminder; onToggle: () => void; onSnooze: () => void; onDelete: () => void;
+function ReminderItem({ item, onToggle, onSnooze, onDelete, onEdit }: {
+  item: Reminder; onToggle: () => void; onSnooze: () => void; onDelete: () => void; onEdit: (input: EditInput) => void;
 }) {
   const accent = useAccentColor();
+  const [expanded, setExpanded] = useState(false);
   const at = new Date(item.remindAt);
   return (
     <PlannerCard>
@@ -149,7 +207,7 @@ function ReminderItem({ item, onToggle, onSnooze, onDelete }: {
             {item.done ? <Feather name="check" size={15} color={colors.bg} /> : null}
           </View>
         </Pressable>
-        <View style={{ flex: 1 }}>
+        <Pressable style={{ flex: 1 }} onPress={() => setExpanded((e) => !e)}>
           <Text style={{ color: item.done ? colors.inkFaint : colors.ink, fontSize: 15, textDecorationLine: item.done ? "line-through" : "none" }}>
             {item.title}
           </Text>
@@ -164,7 +222,7 @@ function ReminderItem({ item, onToggle, onSnooze, onDelete }: {
               </View>
             )}
           </View>
-        </View>
+        </Pressable>
         {!item.done && (
           <Pressable onPress={onSnooze} hitSlop={6} style={{ marginRight: 6 }}>
             <Feather name="rotate-ccw" size={17} color={colors.inkMuted} />
@@ -174,6 +232,15 @@ function ReminderItem({ item, onToggle, onSnooze, onDelete }: {
           <Feather name="trash-2" size={17} color={colors.inkFaint} />
         </Pressable>
       </View>
+
+      {expanded && (
+        <View style={{ marginTop: 12, gap: 10 }}>
+          <EditableTextBlock value={item.title} onSave={(t) => onEdit({ title: t })} placeholder="Reminder title" />
+          <ReminderTimePicker label="When" value={at} onChange={(d) => onEdit({ at: d })} />
+          <LuxeLabel size={11} color={colors.inkMuted}>Repeat</LuxeLabel>
+          <RepeatChips value={item.repeat} onChange={(rp) => onEdit({ repeat: rp })} />
+        </View>
+      )}
     </PlannerCard>
   );
 }

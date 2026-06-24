@@ -9,6 +9,7 @@ interface ReminderState {
   load: () => Promise<void>;
   add: (input: { title: string; note?: string; at: Date; repeat?: RepeatRule }) => Promise<void>;
   update: (id: string, patch: Partial<Reminder>) => Promise<void>;
+  edit: (id: string, input: { title?: string; note?: string; at?: Date; repeat?: RepeatRule }) => Promise<void>;
   toggleDone: (id: string) => Promise<void>;
   snooze: (id: string, minutes: number) => Promise<void>;
   remove: (id: string) => Promise<void>;
@@ -32,6 +33,22 @@ export const useReminderStore = create<ReminderState>((set, get) => ({
 
   update: async (id, patch) => {
     await reminderRepo.update(id, patch);
+    await get().load();
+  },
+
+  edit: async (id, input) => {
+    const r = get().reminders.find((x) => x.id === id);
+    if (!r) return;
+    const title = input.title ?? r.title;
+    const note = input.note ?? r.note;
+    const at = input.at ?? new Date(r.remindAt);
+    const repeat = input.repeat ?? r.repeat;
+    // Reschedule so the OS notification matches the edited content/time.
+    await cancelReminder(r.notificationId);
+    const notificationId = r.done ? null : await scheduleReminder({ title, body: note, at, repeat });
+    await reminderRepo.update(id, {
+      title, note, remindAt: at.toISOString(), repeat, notificationId,
+    });
     await get().load();
   },
 
