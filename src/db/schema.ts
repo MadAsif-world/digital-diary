@@ -14,7 +14,7 @@ const SYNC_COLUMNS = `
   syncStatus TEXT NOT NULL DEFAULT 'local'
 `;
 
-export const SCHEMA_VERSION = 3;
+export const SCHEMA_VERSION = 4;
 
 export const SCHEMA_SQL = `
 PRAGMA journal_mode = WAL;
@@ -168,6 +168,21 @@ CREATE TABLE IF NOT EXISTS calendar_events (
   note TEXT NOT NULL DEFAULT ''
 );
 CREATE INDEX IF NOT EXISTS idx_events_daykey ON calendar_events(dayKey);
+
+CREATE TABLE IF NOT EXISTS habits (
+  ${SYNC_COLUMNS},
+  name TEXT NOT NULL DEFAULT '',
+  color TEXT NOT NULL DEFAULT 'gold',
+  position INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS habit_logs (
+  ${SYNC_COLUMNS},
+  habitId TEXT NOT NULL,
+  dayKey TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_habit_logs_habit ON habit_logs(habitId);
+CREATE INDEX IF NOT EXISTS idx_habit_logs_day ON habit_logs(dayKey);
 
 CREATE TABLE IF NOT EXISTS _meta (
   key TEXT PRIMARY KEY NOT NULL,

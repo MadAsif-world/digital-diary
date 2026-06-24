@@ -161,3 +161,14 @@ export interface CalendarEvent extends SyncBase {
   kind: EventKind;
   note: string;
 }
+
+export interface Habit extends SyncBase {
+  name: string;
+  color: string; // "gold" | "love" | hex — accent hint for the UI
+  position: number;
+}
+
+export interface HabitLog extends SyncBase {
+  habitId: string;
+  dayKey: string; // a day this habit was completed
+}

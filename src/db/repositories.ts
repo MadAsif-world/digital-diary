@@ -2,7 +2,7 @@ import { Repository } from "./repository";
 import type {
   UserSettings, PlannerDay, Priority, Task, TaskList, Reminder, Bill,
   ShoppingList, ShoppingItem, Note, HealthLog, MealPlan,
-  LoveMeterEntry, CalendarEvent,
+  LoveMeterEntry, CalendarEvent, Habit, HabitLog,
 } from "./types";
 
 export const settingsRepo = new Repository<UserSettings>("user_settings", [
@@ -62,4 +62,12 @@ export const loveRepo = new Repository<LoveMeterEntry>("love_entries", [
 
 export const eventRepo = new Repository<CalendarEvent>("calendar_events", [
   "dayKey", "title", "time", "kind", "note",
+]);
+
+export const habitRepo = new Repository<Habit>("habits", [
+  "name", "color", "position",
+]);
+
+export const habitLogRepo = new Repository<HabitLog>("habit_logs", [
+  "habitId", "dayKey",
 ]);

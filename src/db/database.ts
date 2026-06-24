@@ -175,9 +175,9 @@ async function seedFirstRun(database: SQLite.SQLiteDatabase) {
 export async function resetDatabase(): Promise<void> {
   const database = db();
   const tables = [
-    "user_settings", "planner_days", "priorities", "tasks", "reminders",
+    "user_settings", "planner_days", "priorities", "tasks", "task_lists", "reminders",
     "bills", "shopping_lists", "shopping_items", "notes", "health_logs",
-    "meal_plans", "love_entries", "calendar_events",
+    "meal_plans", "love_entries", "calendar_events", "habits", "habit_logs",
   ];
   for (const t of tables) await database.execAsync(`DELETE FROM ${t};`);
   await seedFirstRun(database);

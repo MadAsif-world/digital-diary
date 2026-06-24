@@ -12,6 +12,7 @@ export type ModuleKey =
   | "shopping"
   | "notes"
   | "health"
+  | "habits"
   | "meals"
   | "love"
   | "schedule";
@@ -116,6 +117,16 @@ export const MODULES: ModuleDef[] = [
     route: "/health",
     iconFamily: "feather",
     iconName: f("watch"),
+    accent: "gold",
+  },
+  {
+    key: "habits",
+    title: "Habit Tracker",
+    label: "Habits",
+    subtitle: "Build your streaks",
+    route: "/habits",
+    iconFamily: "mci",
+    iconName: m("calendar-check"),
     accent: "gold",
   },
   {
