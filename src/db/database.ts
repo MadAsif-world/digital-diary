@@ -81,6 +81,12 @@ export function initDatabase(): Promise<void> {
     const prev = await storedVersion(database);
     await database.execAsync(SCHEMA_SQL);
     if (prev > 0 && prev < SCHEMA_VERSION) await runMigrations(database, prev);
+    // listId exists now on both fresh (schema) and upgraded (v3 ALTER) databases.
+    try {
+      await database.execAsync(`CREATE INDEX IF NOT EXISTS idx_tasks_list ON tasks(listId)`);
+    } catch {
+      // older engines without the column yet — harmless, index is non-essential
+    }
     await database.runAsync(
       `INSERT OR REPLACE INTO _meta (key, value) VALUES ('schema_version', ?)`,
       [String(SCHEMA_VERSION)],

@@ -72,7 +72,8 @@ CREATE TABLE IF NOT EXISTS tasks (
   completedAt TEXT
 );
 CREATE INDEX IF NOT EXISTS idx_tasks_due ON tasks(dueDate);
-CREATE INDEX IF NOT EXISTS idx_tasks_list ON tasks(listId);
+-- idx_tasks_list is created in database.ts AFTER migrations, since on an upgrade
+-- the listId column doesn't exist until the v3 ALTER has run.
 
 CREATE TABLE IF NOT EXISTS reminders (
   ${SYNC_COLUMNS},
