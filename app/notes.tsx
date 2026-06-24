@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { View, Text, TextInput, Pressable, Modal, ScrollView } from "react-native";
+import { View, Text, TextInput, Pressable, Modal, ScrollView, Share } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { Screen, PlannerCard, EmptyState, FloatingAddButton } from "../src/components";
 import { LuxeLabel } from "../src/components/LuxeText";
@@ -213,6 +213,17 @@ function NoteEditor({ note, onClose, onSave, onDelete }: {
     onClose();
   };
 
+  // Export the page to any app (Keep, Apple Notes, Mail…) via the OS share sheet.
+  const shareNote = async () => {
+    const text = [title.trim(), body.trim()].filter(Boolean).join("\n\n");
+    if (!text) return;
+    try {
+      await Share.share({ title: title.trim() || "Note", message: text });
+    } catch {
+      /* user dismissed, or unsupported (e.g. some web browsers) */
+    }
+  };
+
   const stamp = note ? new Date(note.updatedAt) : null;
   const dateStr = stamp ? stamp.toLocaleDateString(undefined, { day: "numeric", month: "long", year: "numeric" }) : "";
   const weekday = stamp ? stamp.toLocaleDateString(undefined, { weekday: "long" }) : "";
@@ -223,7 +234,10 @@ function NoteEditor({ note, onClose, onSave, onDelete }: {
         <View style={{ backgroundColor: colors.card, borderTopLeftRadius: 24, borderTopRightRadius: 24, maxHeight: "88%", paddingHorizontal: 18, paddingTop: 14, paddingBottom: 28 }}>
           <View className="mb-3 flex-row items-center justify-between">
             <Pressable onPress={close} hitSlop={8}><Feather name="chevron-down" size={26} color={colors.inkMuted} /></Pressable>
-            <Pressable onPress={onDelete} hitSlop={8}><Feather name="trash-2" size={20} color={colors.love} /></Pressable>
+            <View className="flex-row items-center" style={{ gap: 20 }}>
+              <Pressable onPress={shareNote} hitSlop={8}><Feather name="share" size={19} color={colors.inkMuted} /></Pressable>
+              <Pressable onPress={onDelete} hitSlop={8}><Feather name="trash-2" size={20} color={colors.love} /></Pressable>
+            </View>
           </View>
 
           {/* Page date header, like a diary page */}

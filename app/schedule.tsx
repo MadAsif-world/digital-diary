@@ -10,8 +10,11 @@ import { useTaskStore } from "../src/store/tasks";
 import { useReminderStore } from "../src/store/reminders";
 import { useAccentColor } from "../src/hooks/useAccent";
 import { monthMatrix, parseDayKey, dayKey, dayKey as todayKey, formatLongDate, formatMonthYear, formatTime } from "../src/lib/date";
+import { getCalendarPermission, requestCalendarPermission, getDeviceEvents, type DeviceEvent, type CalPermission } from "../src/lib/deviceCalendar";
 import { colors } from "../src/theme";
 import type { EventKind, Task, Reminder } from "../src/db/types";
+
+const pad2 = (n: number) => String(n).padStart(2, "0");
 
 const DOW = ["S", "M", "T", "W", "T", "F", "S"];
 const KINDS: { k: EventKind; label: string; color: string }[] = [
@@ -46,9 +49,32 @@ export default function ScheduleScreen() {
 
   const [title, setTitle] = useState("");
   const [kind, setKind] = useState<EventKind>("event");
+  const [calPerm, setCalPerm] = useState<CalPermission>("unsupported");
+  const [deviceByDay, setDeviceByDay] = useState<Record<string, DeviceEvent[]>>({});
 
   useEffect(() => { void loadMonth(year, month); }, [year, month, loadMonth]);
   useEffect(() => { void loadTasks(); void loadReminders(); }, [loadTasks, loadReminders]);
+  useEffect(() => { void getCalendarPermission().then(setCalPerm); }, []);
+
+  // Pull device-calendar events for the visible month once access is granted.
+  useEffect(() => {
+    if (calPerm !== "granted") { setDeviceByDay({}); return; }
+    let active = true;
+    const monthStart = `${year}-${pad2(month + 1)}-01`;
+    const monthEnd = `${year}-${pad2(month + 1)}-${pad2(new Date(year, month + 1, 0).getDate())}`;
+    void getDeviceEvents(monthStart, monthEnd).then((evs) => {
+      if (!active) return;
+      const m: Record<string, DeviceEvent[]> = {};
+      for (const e of evs) (m[e.dayKey] ??= []).push(e);
+      setDeviceByDay(m);
+    });
+    return () => { active = false; };
+  }, [year, month, calPerm]);
+
+  const connectCalendar = async () => {
+    const ok = await requestCalendarPermission();
+    setCalPerm(ok ? "granted" : await getCalendarPermission());
+  };
 
   // Follow the selected day's month when it changes elsewhere (e.g. dashboard).
   useEffect(() => {
@@ -76,12 +102,13 @@ export default function ScheduleScreen() {
   }, [reminders]);
 
   const hasItems = (k: string) =>
-    (byDay[k]?.length ?? 0) > 0 || (taskByDay[k]?.length ?? 0) > 0 || (reminderByDay[k]?.length ?? 0) > 0;
+    (byDay[k]?.length ?? 0) > 0 || (taskByDay[k]?.length ?? 0) > 0 || (reminderByDay[k]?.length ?? 0) > 0 || (deviceByDay[k]?.length ?? 0) > 0;
 
   const selectedEvents = byDay[selected] ?? [];
   const selectedTasks = taskByDay[selected] ?? [];
   const selectedReminders = reminderByDay[selected] ?? [];
-  const empty = !selectedEvents.length && !selectedTasks.length && !selectedReminders.length;
+  const selectedDevice = deviceByDay[selected] ?? [];
+  const empty = !selectedEvents.length && !selectedTasks.length && !selectedReminders.length && !selectedDevice.length;
 
   const stepMonth = (delta: number) => {
     let m = month + delta;
@@ -99,6 +126,20 @@ export default function ScheduleScreen() {
 
   return (
     <Screen title="Monthly Schedule" subtitle="The month, mapped">
+      {(calPerm === "denied" || calPerm === "undetermined") && (
+        <PlannerCard accent="gold" style={{ marginBottom: 16 }}>
+          <View className="flex-row items-center" style={{ gap: 10, marginBottom: 12 }}>
+            <Feather name="calendar" size={18} color={colors.gold} />
+            <Text style={{ color: colors.ink, fontSize: 14, flex: 1 }}>
+              Connect your device calendar to see your events here.
+            </Text>
+          </View>
+          <Pressable onPress={connectCalendar} style={{ backgroundColor: colors.gold, borderRadius: 12, paddingVertical: 12, alignItems: "center" }}>
+            <LuxeLabel size={11} color={colors.bg}>Connect calendar</LuxeLabel>
+          </Pressable>
+        </PlannerCard>
+      )}
+
       <PlannerCard style={{ marginBottom: 16 }}>
         <View className="mb-4 flex-row items-center justify-between">
           <IconButton icon="chevron-left" size={36} onPress={() => stepMonth(-1)} />
@@ -182,6 +223,15 @@ export default function ScheduleScreen() {
           <EmptyState icon="calendar" title="Nothing on this day" hint="Add an event above, or a task/reminder from their tabs." />
         ) : (
           <View>
+            {/* Events from the device calendar (read-only) */}
+            {selectedDevice.map((e) => (
+              <View key={`dev-${e.id}`} className="flex-row items-center py-2.5" style={{ gap: 10 }}>
+                <Feather name="calendar" size={14} color={colors.inkMuted} />
+                <Text style={{ color: colors.ink, fontSize: 14, flex: 1 }}>{e.title}</Text>
+                {e.time ? <Text style={{ color: colors.inkMuted, fontSize: 12 }}>{e.time}</Text> : null}
+              </View>
+            ))}
+
             {/* Tasks due this day (from To-Do) */}
             {selectedTasks.map((t) => (
               <View key={t.id} className="flex-row items-center py-2.5" style={{ gap: 10 }}>

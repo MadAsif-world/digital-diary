@@ -52,6 +52,12 @@
           "resizeMode": "contain",
           "backgroundColor": "#0C0C0C"
         }
+      ],
+      [
+        "expo-calendar",
+        {
+          "calendarPermission": "Digital Diary shows your device calendar events alongside your plans."
+        }
       ]
     ],
     "experiments": {
