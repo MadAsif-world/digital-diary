@@ -118,7 +118,14 @@ export interface ShoppingItem extends SyncBase {
   position: number;
 }
 
+export interface Notebook extends SyncBase {
+  name: string;
+  color: string; // cover accent: "gold" | "love" | hex
+  position: number;
+}
+
 export interface Note extends SyncBase {
+  notebookId: string | null; // which book this page lives in
   title: string;
   body: string;
   pinned: number; // 0 | 1

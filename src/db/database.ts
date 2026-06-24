@@ -48,6 +48,15 @@ const MIGRATIONS: Record<number, string[]> = {
     )`,
     `ALTER TABLE tasks ADD COLUMN listId TEXT`,
   ],
+  5: [
+    `CREATE TABLE IF NOT EXISTS notebooks (
+      id TEXT PRIMARY KEY NOT NULL, localId TEXT NOT NULL, userId TEXT,
+      createdAt TEXT NOT NULL, updatedAt TEXT NOT NULL, deletedAt TEXT,
+      syncStatus TEXT NOT NULL DEFAULT 'local',
+      name TEXT NOT NULL DEFAULT '', color TEXT NOT NULL DEFAULT 'gold', position INTEGER NOT NULL DEFAULT 0
+    )`,
+    `ALTER TABLE notes ADD COLUMN notebookId TEXT`,
+  ],
 };
 
 async function storedVersion(database: SQLite.SQLiteDatabase): Promise<number> {
@@ -81,11 +90,13 @@ export function initDatabase(): Promise<void> {
     const prev = await storedVersion(database);
     await database.execAsync(SCHEMA_SQL);
     if (prev > 0 && prev < SCHEMA_VERSION) await runMigrations(database, prev);
-    // listId exists now on both fresh (schema) and upgraded (v3 ALTER) databases.
-    try {
-      await database.execAsync(`CREATE INDEX IF NOT EXISTS idx_tasks_list ON tasks(listId)`);
-    } catch {
-      // older engines without the column yet — harmless, index is non-essential
+    // These columns exist on both fresh (schema) and upgraded (ALTER) databases
+    // only after migrations have run, so create their indexes here.
+    for (const idx of [
+      `CREATE INDEX IF NOT EXISTS idx_tasks_list ON tasks(listId)`,
+      `CREATE INDEX IF NOT EXISTS idx_notes_notebook ON notes(notebookId)`,
+    ]) {
+      try { await database.execAsync(idx); } catch { /* column not present yet — harmless */ }
     }
     await database.runAsync(
       `INSERT OR REPLACE INTO _meta (key, value) VALUES ('schema_version', ?)`,
@@ -93,6 +104,7 @@ export function initDatabase(): Promise<void> {
     );
     await seedFirstRun(database);
     await ensureTaskListDefaults(database);
+    await ensureNotebookDefaults(database);
   })();
   return _initPromise;
 }
@@ -124,6 +136,31 @@ async function ensureTaskListDefaults(database: SQLite.SQLiteDatabase) {
   );
   for (const o of orphans) {
     await database.runAsync(`UPDATE tasks SET listId = ? WHERE id = ?`, [listId, o.id]);
+  }
+}
+
+/** Same idea for notes: ensure a default notebook and file loose notes into it. */
+async function ensureNotebookDefaults(database: SQLite.SQLiteDatabase) {
+  const existing = await database.getFirstAsync<{ id: string }>(
+    `SELECT id FROM notebooks WHERE deletedAt IS NULL ORDER BY position LIMIT 1`,
+  );
+  let notebookId = existing?.id;
+  if (!notebookId) {
+    const ts = nowIso();
+    const id = uuid();
+    await database.runAsync(
+      `INSERT INTO notebooks
+        (id, localId, userId, createdAt, updatedAt, deletedAt, syncStatus, name, color, position)
+       VALUES (?, ?, NULL, ?, ?, NULL, 'local', 'Journal', 'gold', 0)`,
+      [id, id, ts, ts],
+    );
+    notebookId = id;
+  }
+  const orphans = await database.getAllAsync<{ id: string }>(
+    `SELECT id FROM notes WHERE notebookId IS NULL`,
+  );
+  for (const o of orphans) {
+    await database.runAsync(`UPDATE notes SET notebookId = ? WHERE id = ?`, [notebookId, o.id]);
   }
 }
 
@@ -178,6 +215,7 @@ export async function resetDatabase(): Promise<void> {
     "user_settings", "planner_days", "priorities", "tasks", "task_lists", "reminders",
     "bills", "shopping_lists", "shopping_items", "notes", "health_logs",
     "meal_plans", "love_entries", "calendar_events", "habits", "habit_logs",
+    "notebooks",
   ];
   for (const t of tables) await database.execAsync(`DELETE FROM ${t};`);
   await seedFirstRun(database);

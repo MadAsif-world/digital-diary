@@ -14,7 +14,7 @@ const SYNC_COLUMNS = `
   syncStatus TEXT NOT NULL DEFAULT 'local'
 `;
 
-export const SCHEMA_VERSION = 4;
+export const SCHEMA_VERSION = 5;
 
 export const SCHEMA_SQL = `
 PRAGMA journal_mode = WAL;
@@ -116,12 +116,22 @@ CREATE TABLE IF NOT EXISTS shopping_items (
 );
 CREATE INDEX IF NOT EXISTS idx_shopping_items_list ON shopping_items(listId);
 
+CREATE TABLE IF NOT EXISTS notebooks (
+  ${SYNC_COLUMNS},
+  name TEXT NOT NULL DEFAULT '',
+  color TEXT NOT NULL DEFAULT 'gold',
+  position INTEGER NOT NULL DEFAULT 0
+);
+
 CREATE TABLE IF NOT EXISTS notes (
   ${SYNC_COLUMNS},
+  notebookId TEXT,
   title TEXT NOT NULL DEFAULT '',
   body TEXT NOT NULL DEFAULT '',
   pinned INTEGER NOT NULL DEFAULT 0
 );
+-- idx_notes_notebook is created in database.ts after migrations (notebookId is
+-- added by the v5 ALTER on upgrades, so it doesn't exist yet here).
 
 CREATE TABLE IF NOT EXISTS health_logs (
   ${SYNC_COLUMNS},

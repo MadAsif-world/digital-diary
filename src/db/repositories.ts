@@ -1,7 +1,7 @@
 import { Repository } from "./repository";
 import type {
   UserSettings, PlannerDay, Priority, Task, TaskList, Reminder, Bill,
-  ShoppingList, ShoppingItem, Note, HealthLog, MealPlan,
+  ShoppingList, ShoppingItem, Note, Notebook, HealthLog, MealPlan,
   LoveMeterEntry, CalendarEvent, Habit, HabitLog,
 } from "./types";
 
@@ -43,8 +43,12 @@ export const shoppingItemRepo = new Repository<ShoppingItem>("shopping_items", [
   "listId", "name", "quantity", "category", "estPrice", "checked", "position",
 ]);
 
+export const notebookRepo = new Repository<Notebook>("notebooks", [
+  "name", "color", "position",
+]);
+
 export const noteRepo = new Repository<Note>("notes", [
-  "title", "body", "pinned",
+  "notebookId", "title", "body", "pinned",
 ]);
 
 export const healthRepo = new Repository<HealthLog>("health_logs", [
